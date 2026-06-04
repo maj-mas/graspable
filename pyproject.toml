@@ -11,7 +11,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "numpy (>=2.4.6,<3.0.0)",
-    "scipy (>=1.17.1,<2.0.0)"
+    "scipy (>=1.17.1,<2.0.0)",
+    "sphinx (>=9.1.0,<10.0.0)"
 ]
 
 
