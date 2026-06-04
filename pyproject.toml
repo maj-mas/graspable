@@ -3,9 +3,10 @@ name = "graspable"
 version = "0.1.0"
 description = "graspable aims to provide users with a YAML-based set of tools to set up and run atomic structure calculations using the GRASP package."
 authors = [
-    {name = "Maja Maschke"}
+    {name = "Maja Maschke", email="m.maschke@tu-bs.de"}
 ]
 license = "MIT"
+license-files = ["LICEN[CS]E*"]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
