@@ -1,0 +1,19 @@
+[project]
+name = "graspable"
+version = "0.1.0"
+description = "graspable aims to provide users with a YAML-based set of tools to set up and run atomic structure calculations using the GRASP package."
+authors = [
+    {name = "Maja Maschke"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy (>=2.4.6,<3.0.0)",
+    "scipy (>=1.17.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
