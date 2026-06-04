@@ -28,6 +28,12 @@ $ pip install pre-commit
 $ pre-commit install # run in project top directory
 ```
 
+## `sphinx`
+`sphinx` is used to build the documentation:
+```
+$ pip install sphinx
+```
+
 
 # GRASP
 The General Relativistic Atomic Structure Package (`GRASP`) is described by its authors in the following publication:
