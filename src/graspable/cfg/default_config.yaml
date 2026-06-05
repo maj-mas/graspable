@@ -48,7 +48,7 @@ angular:
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options
 orbital_init:
-  - file: null # path to .w file.
+  - file: null # path to .w file, overrides type if used unless .w file is incomplete, then type is applied to remaining orbitals
   - type: null # "tf", "screened_h", "screened_h_z"
   - delta_z: null # z_eff = z + delta_z, used if type == "screened_h_z", only applied to active orbitals
 
