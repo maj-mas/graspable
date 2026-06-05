@@ -2,92 +2,92 @@
 
 # information about the computing environment
 env:
-  - grasp_bin_path: null # path to grasp binaries
-  - working_dir: null # path for intermediate but not temporary files
-  - output_dir: null # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
-  - result_filetypes: [".cm", ".m", ".lsj", ".ct"] # types of result files that should be moved to output_dir for savekeeping
-  - mpi:
-    - use: false # whether to use mpi
-    - n_p: null # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    - invoke_cmd: null # mpi invocation, e.g. mpirun or srun
-    - tmp_dir: null # path for mpi tmp files, creates 1 dir per task there
-    - mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
+  grasp_bin_path: null # path to grasp binaries
+  working_dir: null # path for intermediate but not temporary files
+  output_dir: null # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  result_filetypes: [".cm", ".m", ".lsj", ".ct"] # types of result files that should be moved to output_dir for savekeeping
+  mpi:
+    use: false # whether to use mpi
+    n_p: null # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: null # mpi invocation, e.g. mpirun or srun
+    tmp_dir: null # path for mpi tmp files, creates 1 dir per task there
+    mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
 
 # metadata, no impact on calculations
 meta:
-  - name: "calculation" # name of calculation, only used for output
+  name: "calculation" # name of calculation, only used for output
 
 # nuclear data
 nuclear:
-  - Z: null # atomic number
-  - A: null # mass number,
-  - point-like: null # whether to use point-like nuclear potential. same effect achieved by A = 0
-  - m: null # NEUTRAL atomic mass in amu
-  - static: null # whether the nucleus is to be taken as static. same effect achieved by m = 0
-  - I: null # nuclear spin in hbar
-  - dipole: null # nuclear dipole moment in nuclear magnetons
-  - quadrupole: null # nuclear quadrupole moment in barn
+  Z: null # atomic number
+  A: null # mass number,
+  point-like: null # whether to use point-like nuclear potential. same effect achieved by A = 0
+  m: null # NEUTRAL atomic mass in amu
+  static: null # whether the nucleus is to be taken as static. same effect achieved by m = 0
+  I: null # nuclear spin in hbar
+  dipole: null # nuclear dipole moment in nuclear magnetons
+  quadrupole: null # nuclear quadrupole moment in barn
 
 # data for csf expansion generation
 states:
-  - multireference:
-    - even: null # list of even reference states
-    - odd: null # list of odd reference states
-  - basis_set: null # string defining the basis expansion in the form "5s,4p,3d"
-  - core: null # comma delimited list of frozen core subshells. here, 4p refers to both the 4p and 4p- relativistic subshells
-  - active: null # comma delimited list of active shells or object specifying minimum occupation for every shell
-  - excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
-  - reduce: false # whether to attempt to reduce the active space using rcsfinteract
-  - 2j_min: null # minimum value of 2J for generated CSFs
-  - 2j_max: null # maximum value of 2J for generated CSFs
+  multireference:
+    even: null # list of even reference states
+    odd: null # list of odd reference states
+  basis_set: null # string defining the basis expansion in the form "5s,4p,3d"
+  core: null # comma delimited list of frozen core subshells. here, 4p refers to both the 4p and 4prelativistic subshells
+  active: null # comma delimited list of active shells or object specifying minimum occupation for every shell
+  excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
+  reduce: false # whether to attempt to reduce the active space using rcsfinteract
+  2j_min: null # minimum value of 2J for generated CSFs
+  2j_max: null # maximum value of 2J for generated CSFs
 
 # parameters for the determination of angular coefficients
 angular:
-  - full: true # TODO support variational
+  full: true # TODO support variational
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options
 orbital_init:
-  - file: null # path to .w file, overrides type if used unless .w file is incomplete, then type is applied to remaining orbitals
-  - type: null # "tf", "screened_h", "screened_h_z"
-  - delta_z: null # z_eff = z + delta_z, used if type == "screened_h_z", only applied to active orbitals
+  file: null # path to .w file, overrides type if used unless .w file is incomplete, then type is applied to remaining orbitals
+  type: null # "tf", "screened_h", "screened_h_z"
+  delta_z: null # z_eff = z + delta_z, used if type == "screened_h_z", only applied to active orbitals
 
 
 # parameters for the initial scf procedure on the states in the multireference
 # TODO debug options, level weigths
 mr_csf:
-  - optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  - levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
+  levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the scf procedure for the active space
 # TODO debug options, level weigths
 as_csf:
-  - optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  - levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
+  levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the ci calculation
 # TODO debug options
 ci:
-  - as_expansion: true # whether to perform CI at every step as the active space is expanded by +1 in the principal quantum number. useful to estimate convergence of levels
-  - qed:
-    - with_and_without: false # useful to explicitly state the contribution of qed. if true, rci is run once with and once without QED
-    - transverse: null
-    - transverse_all_freqs: null
-    - scale: "1.d-6"
-    - vacpol: null
-    - normal_ms: null # normal mass shift
-    - specific_ms: null # specific mass shift
-    - se: null # self-energy
-    - n_se: null # maximum n quantum number for self-energy estimation
+  as_expansion: true # whether to perform CI at every step as the active space is expanded by +1 in the principal quantum number. useful to estimate convergence of levels
+  qed:
+    with_and_without: false # useful to explicitly state the contribution of qed. if true, rci is run once with and once without QED
+    transverse: null
+    transverse_all_freqs: null
+    scale: "1.d-6"
+    vacpol: null
+    normal_ms: null # normal mass shift
+    specific_ms: null # specific mass shift
+    se: null # self-energy
+    n_se: null # maximum n quantum number for self-energy estimation
 
 # parameters for transition matrix element calculation
 trans:
-  - multipoles: null # list of multipole types, e.g. ["E1", "M2"]
-  - eveneven: true # perform calculation for transitions among the even multireference
-  - oddodd: true # perform calculation for transitions among the odd multireference
-  - evenodd: true # perform calculation for transitions between odd and even states in the respective multireference
+  multipoles: null # list of multipole types, e.g. ["E1", "M2"]
+  eveneven: true # perform calculation for transitions among the even multireference
+  oddodd: true # perform calculation for transitions among the odd multireference
+  evenodd: true # perform calculation for transitions between odd and even states in the respective multireference
 
 # parameters for QED corrections using the QEDMOD program
 # TODO
 qedmod:
-  - qedmod_bin_path: null # path to qedmod binaries
+  qedmod_bin_path: null # path to qedmod binaries
