@@ -9,7 +9,7 @@ env:
   mpi:
     use: false # whether to use mpi
     n_p: null # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    invoke_cmd: null # mpi invocation, e.g. mpirun or srun
+    invoke_cmd: null # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: null # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
 

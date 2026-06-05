@@ -1,14 +1,14 @@
 # information about the computing environment
 env:
-  grasp_bin_path: ~/code/grasp/bin # path to grasp binaries
-  working_dir: ~/code/graspable_data/He/work # path for intermediate but not temporary files
-  output_dir: ~/code/graspable_data/He # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
+  working_dir: /home/majam/code/graspable_data/He/work # path for intermediate but not temporary files
+  output_dir: /home/majam/code/graspable_data/He # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
   result_filetypes: [".cm", ".m", ".lsj", ".ct"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
     use: true # whether to use mpi
     n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    invoke_cmd: mpirun # mpi invocation, e.g. mpirun or srun
-    tmp_dir: /code/graspable_data/He/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
+    invoke_cmd: mpirun # mpi invocation, e.g. mpirun -np 12 or srun
+    tmp_dir: /home/majam/code/graspable_data/He/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
 
 # metadata, no impact on calculations
@@ -37,10 +37,6 @@ states:
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: 0 # minimum value of 2J for generated CSFs
   2j_max: 6 # maximum value of 2J for generated CSFs
-
-# parameters for the determination of angular coefficients
-angular:
-  full: true # TODO support variational
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options
