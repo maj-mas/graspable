@@ -1,3 +1,5 @@
 ## Define package-level variables
 __version__ = "0.1.0"
 __author__ = "Maja Maschke"
+
+from .main import GraspableMain

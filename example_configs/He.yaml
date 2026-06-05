@@ -1,0 +1,4 @@
+env:
+  - local
+  - mpi:
+    - n: 10
