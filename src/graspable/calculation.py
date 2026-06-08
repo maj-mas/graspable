@@ -1,6 +1,7 @@
 from .environment import Environment
 from .nuclear import Nuclear
 from .csfmanager import CSFManager
+from .scf import SelfConsistentField
 
 
 class Calculation:
@@ -29,6 +30,12 @@ class Calculation:
         print("Generating lists of CSFs...")
         self.cfsman = CSFManager(self.cfg, self.execs)
         self.cfsman.setup()
+        print("...done.")
+
+    def _mr_scf(self):
+        print("Performing SCF procedure for multireference...")
+        self.csfmr = SelfConsistentField(self.cfg, self.execs, "mr_csf")
+        self.csfmr.run()
         print("...done.")
 
     def run(self):
