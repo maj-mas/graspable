@@ -27,6 +27,9 @@ nuclear:
   I: null # nuclear spin in hbar
   dipole: null # nuclear dipole moment in nuclear magnetons
   quadrupole: null # nuclear quadrupole moment in barn
+  non_default_fermi:
+    r_rms : null # nuclear root mean squared radius (fm)
+    skin : null # skin thickness (fm)
 
 # data for csf expansion generation
 states:
