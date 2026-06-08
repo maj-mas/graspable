@@ -38,3 +38,6 @@ class Calculation:
 
         # set up nucleus
         self._setup_nuclear()
+
+        # generate csfs
+        self._generate_csfs()

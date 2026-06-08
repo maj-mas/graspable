@@ -37,9 +37,10 @@ states:
     even: null # list of even reference states
     odd: null # list of odd reference states
   basis_set: null # string defining the basis expansion in the form "5s,4p,3d"
-  core: null # comma delimited list of frozen core subshells. here, 4p refers to both the 4p and 4prelativistic subshells
-  active: null # comma delimited list of active shells or object specifying minimum occupation for every shell
+  core: null # space delimited list of frozen core subshells. here, 4p refers to both the 4p and 4prelativistic subshells
+  active: null # space delimited list of active shells or object specifying minimum occupation for every shell
   excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
+  split: false # whether to split as for convergence check
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: null # minimum value of 2J for generated CSFs
   2j_max: null # maximum value of 2J for generated CSFs
