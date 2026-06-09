@@ -12,6 +12,7 @@ env:
     invoke_cmd: null # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: null # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
+  clean: false # whether to remove previous output
 
 # metadata, no impact on calculations
 meta:

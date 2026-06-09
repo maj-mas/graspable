@@ -39,6 +39,10 @@ class GraspableMain:
             RuntimeError: If the passed config is empty.
         """
 
+        if args is not None:
+            if args.dry_run:
+                raise NotImplementedError("dry run not implemented.")
+
         # load config
         cfg_path = cfg if cfg is not None else args.config
 

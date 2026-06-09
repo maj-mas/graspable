@@ -1,7 +1,8 @@
 from .environment import Environment
 from .nuclear import Nuclear
 from .csfmanager import CSFManager
-from .scf import SelfConsistentField
+from .scfmanager import SCFManager
+from .optimisation_strategy import RandomStrategy
 
 
 class Calculation:
@@ -33,10 +34,33 @@ class Calculation:
         print("...done.")
 
     def _mr_scf(self):
-        print("Performing SCF procedure for multireference...")
-        self.csfmr = SelfConsistentField(self.cfg, self.execs, "mr_csf")
-        self.csfmr.run()
-        print("...done.")
+        print("Performing SCF procedure for even multireference...")
+        self.csfmr_even = SCFManager(
+            self.cfg,
+            self.execs,
+            strategy=RandomStrategy,
+            state="mr_even",
+            orbitals=self.cfsman.orbitals_even,
+            type="mr",
+            id="mr_even",
+            mpi=False,
+        )
+        self.csfmr_even.run()
+        print("..done.")
+
+        print("Performing SCF procedure for odd multireference...")
+        self.csfmr_odd = SCFManager(
+            self.cfg,
+            self.execs,
+            strategy=RandomStrategy,
+            state="mr_odd",
+            orbitals=self.cfsman.orbitals_odd,
+            type="mr",
+            id="mr_odd",
+            mpi=False,
+        )
+        self.csfmr_odd.run()
+        print("..done.")
 
     def run(self):
         print(f"Starting calculation {self.cfg['meta']['name']}...")
@@ -48,3 +72,6 @@ class Calculation:
 
         # generate csfs
         self._generate_csfs()
+
+        # do scf for mr
+        self._mr_scf()

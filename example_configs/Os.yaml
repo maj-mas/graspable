@@ -1,14 +1,14 @@
 # information about the computing environment
 env:
   grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
-  working_dir: /home/majam/code/graspable_data/He/work # path for intermediate but not temporary files
-  output_dir: /home/majam/code/graspable_data/He # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  working_dir: /home/majam/code/graspable_data/Os/work # path for intermediate but not temporary files
+  output_dir: /home/majam/code/graspable_data/Os # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
   result_filetypes: [".cm", ".m", ".lsj", ".ct"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
     use: true # whether to use mpi
     n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
     invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
-    tmp_dir: /home/majam/code/graspable_data/He/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
+    tmp_dir: /home/majam/code/graspable_data/Os/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
   clean: true
 
@@ -18,10 +18,10 @@ meta:
 
 # nuclear data
 nuclear:
-  Z: 2 # atomic number
-  A: 4 # mass number,
+  Z: 76 # atomic number
+  A: 190 # mass number,
   point-like: false # whether to use point-like nuclear potential. same effect achieved by A = 0
-  m: 4.002603254 # NEUTRAL atomic mass in amu
+  m: 192 # NEUTRAL atomic mass in amu
   static: false # whether the nucleus is to be taken as static. same effect achieved by m = 0
   I: 0 # nuclear spin in hbar
   dipole: 0 # nuclear dipole moment in nuclear magnetons
@@ -30,15 +30,16 @@ nuclear:
 # data for csf expansion generation
 states:
   multireference:
-    even: ["1s2"] # list of even reference states
-    odd: ["1s1 2p1"] # list of odd reference states
-  basis_set: "3s,3p,3d" # string defining the basis expansion in the form "5s,4p,3d"
+    even: ["4f12 5s2"] # list of even reference states
+    odd: ["4f13 5s1"] # list of odd reference states
+  core: "1s 2s 2p 3s 3p 3d 4s 4p 4d"
+  basis_set: "6s,6p,6d,6f,6g" # string defining the basis expansion in the form "5s,4p,3d"
   active: "*" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   split: true # whether to split as for convergence check
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: 0 # minimum value of 2J for generated CSFs
-  2j_max: 6 # maximum value of 2J for generated CSFs
+  2j_max: 12 # maximum value of 2J for generated CSFs
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options

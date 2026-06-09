@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import subprocess
 
 
 class Environment:
@@ -65,6 +66,8 @@ class Environment:
 
         # go to working dir
         os.chdir(working_dir)
+        if self.cfg["clean"]:
+            subprocess.run(["rm *"], shell=True)  # TODO dangerous? ask user?
 
         return self._setup_execs()
 
@@ -100,8 +103,12 @@ class Environment:
                     )
                 # update program name
                 self.execs[identifier] = exec
-            # prepend path
+            # prepend path and invoker
             self.execs[identifier] = str(grasp_bin_path / exec)
+            if identifier in self.mpi_prgs and self.cfg["mpi"]:
+                self.execs[identifier] = (
+                    self.cfg["mpi"]["invoke_cmd"] + " " + self.execs[identifier]
+                )
 
         # also keep no mpi versions of these two
         self.execs["rmcdhf_nmpi"] = str(grasp_bin_path / "rmcdhf")

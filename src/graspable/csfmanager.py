@@ -1,5 +1,6 @@
 import subprocess
 import re
+from copy import deepcopy
 
 
 class CSFManager:
@@ -85,8 +86,8 @@ class CSFManager:
 
     def _assemble_state(self, state: str) -> str:
         state_grasp = self.core_str
-        state_orbitals = state.split(" ")
-        for shell in state_orbitals:
+        state_shells = state.split(" ")
+        for shell in state_shells:
             if shell in self.core:
                 raise RuntimeError(
                     f"Logic error: orbital {shell[:-1]} appears both in core and in state {state}."
@@ -104,13 +105,34 @@ class CSFManager:
 
         return state_grasp
 
+    def _orbitals_from_state(self, state: str) -> list[str]:
+        orbitals = []
+        state_shells = state.split(" ")
+        for shell in state_shells:
+            n, l, occ = self._decompose_shell(shell)
+            orbitals.append(f"{n}{self.oam_symbols_rev[l]}")
+
+        return orbitals
+
     def _assemble_states(self):
+        self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
         self.states_even = []
         for state in self.cfg["multireference"]["even"]:
+            orbitals_state = self._orbitals_from_state(state)
+            for orbital in orbitals_state:
+                if orbital not in self.orbitals_even:
+                    self.orbitals_even.append(orbital)
+
             self.states_even.append(self._assemble_state(state))
 
+        self.orbitals_odd = deepcopy(self.core)  # also get a list of all orbitals
         self.states_odd = []
         for state in self.cfg["multireference"]["odd"]:
+            orbitals_state = self._orbitals_from_state(state)
+            for orbital in orbitals_state:
+                if orbital not in self.orbitals_odd:
+                    self.orbitals_odd.append(orbital)
+
             self.states_odd.append(self._assemble_state(state))
 
     def _create_rcsfgenerate_input(
