@@ -7,6 +7,7 @@ from .nuclear import Nuclear
 from .optimisation_strategy import RandomStrategy, SuccessiveStrategy
 from .scfmanager import SCFManager
 from .transition import Transition
+from .cleanup import Clean
 
 
 class Calculation:
@@ -151,7 +152,11 @@ class Calculation:
         self.time = datetime.now()
 
     def _cleanup(self):
-        pass
+        print("Performing cleanup...")
+        self.cleaner = Clean(self.cfg)
+        self.cleaner.clean()
+        print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
+        self.time = datetime.now()
 
     def run(self):
         print(f"Starting calculation {self.cfg['meta']['name']}...")

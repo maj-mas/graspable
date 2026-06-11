@@ -13,6 +13,10 @@ env:
     tmp_dir: null # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
   clean: false # whether to remove previous output
+  improve: false # whether to expand on a previous calculation (applies only to scf and ci)
+  keep_log: true
+  keep_input: true
+  keep_intermediate: false
 
 # metadata, no impact on calculations
 meta:
