@@ -67,7 +67,7 @@ class Environment:
         # go to working dir
         os.chdir(working_dir)
         if self.cfg["clean"]:
-            subprocess.run(["rm *"], shell=True)  # TODO dangerous? ask user?
+            raise NotImplementedError("Clean not supported yet.")
 
         return self._setup_execs()
 

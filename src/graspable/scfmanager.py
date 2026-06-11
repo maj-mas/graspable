@@ -16,10 +16,13 @@ class SCFManager:
         execs: list[str],
         strategy: AbstractOptimisationStrategy,
         state: str,
-        orbitals=list[str],
-        type=str,
-        id=str,
+        orbitals: list[str],
+        type: str,
+        id: str,
         mpi: bool = True,
+        init_run: str | None = None,
+        final_star_run: bool = False,
+        run_limit: int = 100,
     ) -> None:
         self.cfg = cfg
         self.execs = execs
@@ -39,6 +42,9 @@ class SCFManager:
 
         self.id = id
         self.mpi = mpi
+        self.init_run = init_run
+        self.final_star_run = final_star_run
+        self.run_limit = run_limit
 
         if cfg["angular"]["full"]:
             self.rangular_input = "<<EOF\ny\nEOF"
@@ -66,6 +72,7 @@ class SCFManager:
         i = 0
         successful_run_exists = False
         optimize_orbitals = " ".join(strategy.next_set())
+        print(f"Trying set {optimize_orbitals}.")
         scf = SelfConsistentField(
             execs=self.execs,
             orbitals_optimise=optimize_orbitals,
@@ -86,11 +93,14 @@ class SCFManager:
         while not strategy.converged():
             optimize_orbitals = " ".join(strategy.next_set())
             print(f"Trying set {optimize_orbitals}.")
+            run_name = (
+                self.id + str(i) if optimize_orbitals != "*" else self.id + "_all"
+            )
             scf = SelfConsistentField(
                 execs=self.execs,
                 orbitals_optimise=optimize_orbitals,
                 orbitals_spectroscopic=self.orbitals_spectroscopic,
-                run_name=self.id + str(i),
+                run_name=run_name,
                 levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
@@ -106,5 +116,29 @@ class SCFManager:
                 )
 
             i += 1
+            if i > self.run_limit:
+                raise RuntimeError(
+                    "After {i} SCF runs, no convergence was reached. Try changing the optimisation strategy."
+                )
+
+        if self.final_star_run == True:
+            optimize_orbitals = "*"
+            print(f"Trying set {optimize_orbitals}.")
+            scf = SelfConsistentField(
+                execs=self.execs,
+                orbitals_optimise=optimize_orbitals,
+                orbitals_spectroscopic=self.orbitals_spectroscopic,
+                run_name=self.id + "_all",
+                levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
+                mpi=self.mpi,
+                init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
+                init_run=self.id + str(i - 1) if successful_run_exists else None,
+            )
+            retcode = scf.run()
+            if retcode == 0:
+                successful_run_exists = True
+                strategy.update_graph_multiple(optimize_orbitals.split(" "))
+            else:
+                raise RuntimeError("Final * run of SFC failed.")
 
         # TODO option for a final run with "*"

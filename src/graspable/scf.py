@@ -7,8 +7,8 @@ class SelfConsistentField:
         execs: list[str],
         orbitals_optimise: str,
         orbitals_spectroscopic: str,
-        run_name=str,
-        levels_per_j=int | list[int],
+        run_name: str,
+        levels_per_j: int | list[int],
         mpi: bool = True,
         init_type: int = 3,
         init_run: str | None = None,
@@ -47,6 +47,7 @@ class SelfConsistentField:
                 file.write(self.init_run + ".w\n")
                 file.write("*\n")
                 file.write(f"{self.init_type}\n")
+                file.write("*\n")
             else:
                 if self.init_type == 1:
                     raise RuntimeError(

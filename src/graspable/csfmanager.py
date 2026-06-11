@@ -65,6 +65,12 @@ class CSFManager:
             else:
                 self.active = []
 
+        for orbital in self.active:
+            if orbital in self.core:
+                raise RuntimeError(
+                    f"Orbital {orbital} cannot belong to core and be active."
+                )  # TODO nice test case candidate
+
     def _check_active(self, orbital: str) -> bool:
         # check valid
         n, l = self._decompose_orbital(orbital)
@@ -170,25 +176,18 @@ class CSFManager:
         return highest_n_state, highest_n_basis
 
     def _create_rcsfsplit_input(self, fname: str, state_name: str):
-        n_min, n_max = self._select_split()
-        n_sets = n_max - n_min + 1
+        self.n_min, self.n_max = self._select_split()
+        self.n_sets = self.n_max - self.n_min + 1
         with open(f"input/{fname}", "w") as file:
             file.write(state_name + "\n")
-            file.write(str(n_sets) + "\n")
-            for n in range(n_min, n_max + 1):
+            file.write(str(self.n_sets) + "\n")
+            for n in range(self.n_min, self.n_max + 1):
                 for l in range(n):
                     oam = self.oam_symbols_rev[l]
                     orbital = f"{n}{oam}"
-                    include = False
-                    for basis_orbital in self.cfg["basis_set"].split(","):
-                        basis_n, basis_l = self._decompose_orbital(basis_orbital)
-                        if l == basis_l and n <= basis_n:
-                            include = True
-                    if (
-                        include and l != n - 1
-                    ):  # TODO this might not always prevent an extra comma at the end
+                    if l != n - 1:
                         file.write(orbital + ",")
-                    elif include:
+                    else:
                         file.write(orbital)
                 file.write("\n")
                 file.write(f"{n}\n")
@@ -291,6 +290,23 @@ class CSFManager:
         self._gen_as()
         if self.cfg["split"]:
             self._split_as()
+
+    def active_orbitals_given_n(self, n: int) -> list[str]:
+        active_list = []
+        basis_set = self.cfg["basis_set"].split(",")
+        for l in range(n):
+            oam = self.oam_symbols_rev[l]
+            orbital = f"{n}{oam}"
+            keep = False
+            for basis_orbital in basis_set:
+                n_basis, l_basis = self._decompose_orbital(basis_orbital)
+                if l == l_basis and n <= n_basis:
+                    keep = True
+
+            if keep:
+                active_list.append(orbital)
+
+        return active_list
 
     # TODO add zero/first order split
     # TODO add rcsfinteract reduction

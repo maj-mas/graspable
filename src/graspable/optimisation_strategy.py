@@ -60,7 +60,7 @@ class AbstractOptimisationStrategy(ABC):
             for orbital2 in orbset:
                 if orbital1 == "*" or orbital2 == "*":
                     self.optimized_together_graph = np.full(
-                        (self.n, self.n), fill_value=True, dtype=bool
+                        (self.n_orbitals, self.n_orbitals), fill_value=True, dtype=bool
                     )
                 if "*" in orbital1:
                     pass
@@ -107,16 +107,22 @@ class RandomStrategy(AbstractOptimisationStrategy):
                     "No valid next try orbital set found after 100 selections."
                 )
 
-        print(
-            "bad",
-            self.bad_sets_since_last_success,
-            "good",
-            self.converged_sets,
-            "sel",
-            selection,
-            "conv",
-            self.converged(),
-        )
-        print(self.optimized_together_graph)
-
         return selection
+
+
+class SuccessiveStrategy(AbstractOptimisationStrategy):
+    i = 0
+
+    def converged(self) -> bool:
+        return (
+            False if self.i < len(list(self.orbital_map.keys())) else True
+        )  # TODO Hack
+
+    def next_set(self) -> list[str] | str:
+        orbitals = list(self.orbital_map.keys())
+
+        if self.i < len(orbitals):
+            self.i += 1
+            return [orbitals[self.i - 1]]
+        else:
+            raise RuntimeError("SuccessiveStrategy called too many times.")
