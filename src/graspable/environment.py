@@ -1,6 +1,5 @@
-from pathlib import Path
 import os
-import subprocess
+from pathlib import Path
 
 
 class Environment:
@@ -61,8 +60,9 @@ class Environment:
             disks_path = working_dir / "disks"
             with open(disks_path, "w") as file:
                 file.write(f'"{str(working_dir)}"\n')
-                for i in range(self.cfg["mpi"]["n_p"]):
-                    file.write(f'"{str(tmp_dir)}"\n')
+                file.writelines(
+                    f'"{str(tmp_dir)}"\n' for _i in range(self.cfg["mpi"]["n_p"])
+                )
 
         # go to working dir
         os.chdir(working_dir)

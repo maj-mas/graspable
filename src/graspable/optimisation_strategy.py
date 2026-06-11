@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
-import numpy as np
-import re
 import random
+import re
+from abc import ABC, abstractmethod
+
+import numpy as np
 
 
 class AbstractOptimisationStrategy(ABC):
@@ -16,7 +17,7 @@ class AbstractOptimisationStrategy(ABC):
         "j": 7,
         "k": 8,
     }
-    oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys()))
+    oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys(), strict=False))
     bad_sets_since_last_success = []
     converged_sets = []
 
@@ -34,7 +35,7 @@ class AbstractOptimisationStrategy(ABC):
         if len(decomp) != 2:
             raise RuntimeError(f"Error in glob of orbital {orbital}.")
         if decomp[0] == "*":
-            raise NotImplementedError(f"Globs of type *oam are not supported.")
+            raise NotImplementedError("Globs of type *oam are not supported.")
         if decomp[1] == "*":
             n = int(decomp[0])
             for l in range(n):
@@ -52,9 +53,7 @@ class AbstractOptimisationStrategy(ABC):
         if not success:
             self.bad_sets_since_last_success.append(orbset)  # if unsuccessful, store
             return
-        self.bad_sets_since_last_success = (
-            []
-        )  # if successful, empty store of bad attempts (we want retries)
+        self.bad_sets_since_last_success = []  # if successful, empty store of bad attempts (we want retries)
         self.converged_sets.append(orbset)
         for orbital1 in orbset:
             for orbital2 in orbset:
@@ -124,5 +123,4 @@ class SuccessiveStrategy(AbstractOptimisationStrategy):
         if self.i < len(orbitals):
             self.i += 1
             return [orbitals[self.i - 1]]
-        else:
-            raise RuntimeError("SuccessiveStrategy called too many times.")
+        raise RuntimeError("SuccessiveStrategy called too many times.")

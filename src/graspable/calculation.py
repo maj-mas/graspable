@@ -1,11 +1,12 @@
 from datetime import datetime
 
+from .cimanager import CIManager
+from .csfmanager import CSFManager
 from .environment import Environment
 from .nuclear import Nuclear
-from .csfmanager import CSFManager
-from .scfmanager import SCFManager
 from .optimisation_strategy import RandomStrategy, SuccessiveStrategy
-from .cimanager import CIManager
+from .scfmanager import SCFManager
+from .transition import Transition
 
 
 class Calculation:
@@ -76,11 +77,9 @@ class Calculation:
 
     def _as_scf(self):
         if self.cfg["states"]["split"]:
-            n_sets = self.csfman.n_sets
             n_min = self.csfman.n_min
             n_max = self.csfman.n_max
         else:
-            n_sets = 1
             n_min = (0,)
             n_max = 1
 
@@ -127,7 +126,7 @@ class Calculation:
             for parity in ["even", "odd"]:
                 print(f"Performing CI calculation up to n={n} for {parity} parity...")
                 orbitals = self.csfman.active_orbitals_given_n(n)
-                state = f"as_{parity}{n}{len(orbitals)+1-1}"
+                state = f"as_{parity}{n}{len(orbitals) + 1 - 1}"
                 self.ci = CIManager(
                     self.cfg,
                     self.execs,
@@ -137,6 +136,22 @@ class Calculation:
                 self.ci.run()
                 print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
                 self.time = datetime.now()
+
+    def _trans(self):
+        print("Performing transition calculation...")
+
+        n = self.csfman.n_max
+        orbitals = self.csfman.active_orbitals_given_n(n)
+        state_even = f"as_even{n}{len(orbitals) + 1 - 1}CI"
+        state_odd = f"as_odd{n}{len(orbitals) + 1 - 1}CI"
+
+        self.trans = Transition(self.cfg, self.execs, state_even, state_odd)
+        self.trans.run()
+        print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
+        self.time = datetime.now()
+
+    def _cleanup(self):
+        pass
 
     def run(self):
         print(f"Starting calculation {self.cfg['meta']['name']}...")
@@ -157,3 +172,9 @@ class Calculation:
 
         # do ci
         self._as_ci()
+
+        # transition
+        self._trans()
+
+        # perform cleanup
+        self._cleanup()

@@ -76,7 +76,7 @@ ci:
 
 # parameters for transition matrix element calculation
 trans:
-  multipoles: ["E1"] # list of multipole types, e.g. ["E1", "M2"]
+  multipoles: ["E1",] # list of multipole types, e.g. ["E1", "M2"]
   eveneven: true # perform calculation for transitions among the even multireference
   oddodd: true # perform calculation for transitions among the odd multireference
   evenodd: true # perform calculation for transitions between odd and even states in the respective multireference

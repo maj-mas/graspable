@@ -13,6 +13,7 @@ dependencies = [
     "pyyaml (>=6.0.3,<7.0.0)",
     "omegaconf (>=2.3.0,<3.0.0)",
     "numpy (>=2.4.6,<3.0.0)",
+    "ruff (>=0.15.16,<0.16.0)",
 ]
 
 [project.scripts]
@@ -24,3 +25,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.setuptools.package-data]
 cfg = ["*.yaml"]
+
+[tool.ruff.lint]
+extend-select = ["B"]
+ignore = ["E741"] # ambiguious names: n, l can be semantic in physics codes

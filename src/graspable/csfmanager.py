@@ -1,5 +1,5 @@
-import subprocess
 import re
+import subprocess
 from copy import deepcopy
 
 
@@ -15,7 +15,7 @@ class CSFManager:
         "j": 7,
         "k": 8,
     }
-    oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys()))
+    oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys(), strict=True))
 
     def __init__(self, cfg: dict, execs: dict) -> None:
         self.cfg = cfg["states"]
@@ -59,11 +59,10 @@ class CSFManager:
             raise NotImplementedError(
                 "Detailed active space specification is not implemented yet."
             )
+        if self.cfg["active"] is not None:
+            self.active = self.cfg["active"].split(" ")
         else:
-            if self.cfg["active"] is not None:
-                self.active = self.cfg["active"].split(" ")
-            else:
-                self.active = []
+            self.active = []
 
         for orbital in self.active:
             if orbital in self.core:
@@ -147,8 +146,7 @@ class CSFManager:
         with open(f"input/{fname}", "w") as file:
             file.write("*\n")  # default order
             file.write("0\n")  # no pre-def core
-            for state in states:
-                file.write(state + "\n")  # states
+            file.writelines(state + "\n" for state in states)  # states
             file.write("\n")  # end states
             file.write(self.cfg["basis_set"] + "\n")  # as basis set
             file.write(str(j2_min) + "\n")  # 2j lower

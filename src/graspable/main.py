@@ -1,7 +1,9 @@
 import argparse
 import sys
-from omegaconf import OmegaConf
 from importlib.resources import files
+
+from omegaconf import OmegaConf
+
 from .calculation import Calculation
 
 # setup cli args

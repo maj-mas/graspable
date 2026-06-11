@@ -1,6 +1,7 @@
 import subprocess
-from .scf import SelfConsistentField
+
 from .optimisation_strategy import AbstractOptimisationStrategy
+from .scf import SelfConsistentField
 
 
 class SCFManager:
@@ -121,7 +122,7 @@ class SCFManager:
                     "After {i} SCF runs, no convergence was reached. Try changing the optimisation strategy."
                 )
 
-        if self.final_star_run == True:
+        if self.final_star_run:
             optimize_orbitals = "*"
             print(f"Trying set {optimize_orbitals}.")
             scf = SelfConsistentField(
