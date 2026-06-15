@@ -1,20 +1,21 @@
 # information about the computing environment
 env:
-  grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
-  working_dir: /home/majam/code/graspable_data/Mo/work # path for intermediate but not temporary files
-  output_dir: /home/majam/code/graspable_data/Mo # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
-  result_filetypes: [".cm", ".m", "lsj", "ct", ".w"] # types of result files that should be moved to output_dir for savekeeping
+  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
+  working_dir: /home/majam/code/graspable_data/Mo_g/work # path for intermediate but not temporary files
+  output_dir: /home/majam/code/graspable_data/Mo_g # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
     use: true # whether to use mpi
-    n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
-    tmp_dir: /home/majam/code/graspable_data/Mo/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
-    mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    n_p: 2 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: "mpirun -np 2" # mpi invocation, e.g. mpirun -np 12 or srun
+    tmp_dir: /home/majam/code/graspable_data/Mo_g/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
+    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
   clean: false
   improve: false
   keep_log: true
   keep_input: true
-  keep_intermediate: false
+  keep_intermediate: true
 
 # metadata, no impact on calculations
 meta:
@@ -37,7 +38,7 @@ states:
     even: ["1s2 2s1 2p2"] # list of even reference states
     odd: ["1s2 2s2 2p1", "1s2 2p3"] # list of odd reference states
   core: null
-  basis_set: "5s,5p,5d,5f,5g" # string defining the basis expansion in the form "5s,4p,3d"
+  basis_set: "3s,3p,3d" # string defining the basis expansion in the form "5s,4p,3d"
   active: "*" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   split: true # whether to split as for convergence check TODO maybe this should be removed and just be true
@@ -76,7 +77,7 @@ ci:
     normal_ms: false # normal mass shift
     specific_ms: false # specific mass shift
     se: false # self-energy
-    n_se: false # maximum n quantum number for self-energy estimation
+    n_se: null # maximum n quantum number for self-energy estimation
 
 # parameters for transition matrix element calculation
 trans:

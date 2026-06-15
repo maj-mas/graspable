@@ -20,6 +20,7 @@ class CSFManager:
     def __init__(self, cfg: dict, execs: dict) -> None:
         self.cfg = cfg["states"]
         self.execs = execs
+        self.graspg = cfg["env"]["mpi"]["graspg"]
 
         self._parse_core()
         self._parse_active()
@@ -141,14 +142,24 @@ class CSFManager:
             self.states_odd.append(self._assemble_state(state))
 
     def _create_rcsfgenerate_input(
-        self, fname: str, states: list[str], exc: int, j2_min: int, j2_max: int
+        self,
+        fname: str,
+        states: list[str],
+        exc: int,
+        j2_min: int,
+        j2_max: int,
+        manual_basis: str | None = None,
     ):
         with open(f"input/{fname}", "w") as file:
-            file.write("*\n")  # default order
+            if not self.graspg:
+                file.write("*\n")  # default order
             file.write("0\n")  # no pre-def core
             file.writelines(state + "\n" for state in states)  # states
             file.write("\n")  # end states
-            file.write(self.cfg["basis_set"] + "\n")  # as basis set
+            if manual_basis is None:
+                file.write(self.cfg["basis_set"] + "\n")  # as basis set
+            else:
+                file.write(manual_basis + "\n")  # as basis set
             file.write(str(j2_min) + "\n")  # 2j lower
             file.write(str(j2_max) + "\n")  # 2j upper
             file.write(str(exc) + "\n")  # # of excitations
@@ -190,13 +201,35 @@ class CSFManager:
                 file.write("\n")
                 file.write(f"{n}\n")
 
+    def _mr_basis(self) -> str:
+        basis = ""
+        for oam_symbol in list(self.oam_symbols.keys()):
+            highest_n = 0
+            for orbital in self.orbitals_even:
+                if oam_symbol in orbital:
+                    n, l = self._decompose_orbital(orbital)
+                    highest_n = n
+            for orbital in self.orbitals_odd:
+                if oam_symbol in orbital:
+                    n, l = self._decompose_orbital(orbital)
+                    highest_n = n
+            if highest_n != 0:
+                basis += f"{highest_n}{oam_symbol},"
+
+        if basis.endswith(","):
+            basis = basis[:-1]
+
+        return basis
+
     def _gen_mr(self):
+        mr_basis = self._mr_basis()
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_mr_even",
             self.states_even,
             0,
             self.cfg["2j_min"],
             self.cfg["2j_max"],
+            manual_basis=mr_basis,
         )
         rcsfgenerate_proc_mr_even = subprocess.run(
             [
@@ -215,6 +248,7 @@ class CSFManager:
             0,
             self.cfg["2j_min"],
             self.cfg["2j_max"],
+            manual_basis=mr_basis,
         )
         rcsfgenerate_proc_mr_odd = subprocess.run(
             [
@@ -226,6 +260,48 @@ class CSFManager:
             f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
         )
         subprocess.run(["cp rcsf.out mr_odd.c"], shell=True)
+
+    def _gen_mr_csfg(self):
+        mr_basis = self._mr_basis()
+        self._create_rcsfgenerate_input(
+            "rcsfgenerate_input_mr_even",
+            self.states_even,
+            0,
+            self.cfg["2j_min"],
+            self.cfg["2j_max"],
+            manual_basis=mr_basis,
+        )
+        rcsfgenerate_proc_mr_even = subprocess.run(
+            [
+                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_even &> log/rcsfgenerate_log_mr_even"
+            ],
+            shell=True,
+        )
+        print(
+            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
+        )
+        subprocess.run(["cp rcsfg.out mr_even.c"], shell=True)
+        subprocess.run(["cp rlabel.out mr_even_label"], shell=True)
+
+        self._create_rcsfgenerate_input(
+            "rcsfgenerate_input_mr_odd",
+            self.states_odd,
+            0,
+            self.cfg["2j_min"],
+            self.cfg["2j_max"],
+            manual_basis=mr_basis,
+        )
+        rcsfgenerate_proc_mr_odd = subprocess.run(
+            [
+                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_odd &> log/rcsfgenerate_log_mr_odd"
+            ],
+            shell=True,
+        )
+        print(
+            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
+        )
+        subprocess.run(["cp rcsfg.out mr_odd.c"], shell=True)
+        subprocess.run(["cp rlabel.out mr_odd_label"], shell=True)
 
     def _gen_as(self):
         self._create_rcsfgenerate_input(
@@ -264,6 +340,45 @@ class CSFManager:
         )
         subprocess.run(["cp rcsf.out as_odd.c"], shell=True)
 
+    def _gen_as_csfg(self):
+        self._create_rcsfgenerate_input(
+            "rcsfgenerate_input_as_even",
+            self.states_even,
+            self.cfg["excitations"],
+            self.cfg["2j_min"],
+            self.cfg["2j_max"],
+        )
+        rcsfgenerate_proc_as_even = subprocess.run(
+            [
+                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even &> log/rcsfgenerate_log_as_even"
+            ],
+            shell=True,
+        )
+        print(
+            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
+        )
+        subprocess.run(["cp rcsfg.out as_even.c"], shell=True)
+        subprocess.run(["cp rlabel.out as_even_label"], shell=True)
+
+        self._create_rcsfgenerate_input(
+            "rcsfgenerate_input_as_odd",
+            self.states_odd,
+            self.cfg["excitations"],
+            self.cfg["2j_min"],
+            self.cfg["2j_max"],
+        )
+        rcsfgenerate_proc_as_odd = subprocess.run(
+            [
+                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd &> log/rcsfgenerate_log_as_odd"
+            ],
+            shell=True,
+        )
+        print(
+            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
+        )
+        subprocess.run(["cp rcsfg.out as_odd.c"], shell=True)
+        subprocess.run(["cp rlabel.out as_odd_label"], shell=True)
+
     def _split_as(self):
         self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
         rcsfsplit_proc_even = subprocess.run(
@@ -283,11 +398,74 @@ class CSFManager:
         )
         print(f"rcsfsplit completed with exit code {rcsfsplit_proc_odd.returncode}.")
 
+    def _split_as_csfg(self):
+        print(
+            "Performing AS split manually since graspg ins enabled, this step might take a little longer."
+        )
+        self.n_min, self.n_max = self._select_split()
+        self.n_sets = self.n_max - self.n_min + 1
+
+        for n in range(self.n_min, self.n_max + 1):
+            basis = ""
+            for l in range(n):
+                oam = self.oam_symbols_rev[l]
+                orbital = f"{n}{oam}"
+                if l != n - 1:
+                    basis += orbital + ","
+                else:
+                    basis += orbital
+
+            self._create_rcsfgenerate_input(
+                f"rcsfgenerate_input_as_even_split{n}",
+                self.states_even,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=basis,
+            )
+            rcsfgenerate_proc_split_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even_split{n} &> log/rcsfgenerate_log_as_even_split{n}"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_even.returncode}."
+            )
+            subprocess.run([f"cp rcsfg.out as_even{n}.c"], shell=True)
+            subprocess.run([f"cp rlabel.out as_even{n}_label"], shell=True)
+
+            self._create_rcsfgenerate_input(
+                f"rcsfgenerate_input_as_odd_split{n}",
+                self.states_odd,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=basis,
+            )
+            rcsfgenerate_proc_split_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd_split{n} &> log/rcsfgenerate_log_as_odd_split{n}"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_odd.returncode}."
+            )
+            subprocess.run([f"cp rcsfg.out as_odd{n}.c"], shell=True)
+            subprocess.run([f"cp rlabel.out as_odd{n}_label"], shell=True)
+
     def setup(self):
-        self._gen_mr()
-        self._gen_as()
-        if self.cfg["split"]:
-            self._split_as()
+        if not self.graspg:
+            self._gen_mr()
+            self._gen_as()
+            if self.cfg["split"]:
+                self._split_as()
+        else:
+            self._gen_mr_csfg()
+            self._gen_as_csfg()
+            if self.cfg["split"]:
+                self._split_as_csfg()
 
     def active_orbitals_given_n(self, n: int) -> list[str]:
         active_list = []

@@ -54,10 +54,18 @@ class SCFManager:
                 "Only full interaction at angular integration supported thus far."
             )  # TODO
 
+        self.graspg = cfg["env"]["mpi"]["graspg"]
+
     def run(self):
-        cp_proc = subprocess.run([f"cp {self.state}.c rcsf.inp"], shell=True)
+        cp_proc = subprocess.run(
+            [f"cp {self.state}.c rcsf{'g' if self.graspg else ''}.inp"], shell=True
+        )
         if cp_proc.returncode != 0:
             raise RuntimeError(f"Error copying {self.state}.c to rcsf.inp")
+        if self.graspg:
+            cp_proc = subprocess.run([f"cp {self.state}_label rlabel.inp"], shell=True)
+            if cp_proc.returncode != 0:
+                raise RuntimeError(f"Error copying {self.state}_label to rlabel.inp")
 
         rangular_exec = (
             self.execs["rangular"] if self.mpi else self.execs["rangular_nmpi"]
@@ -82,6 +90,7 @@ class SCFManager:
             levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
             mpi=self.mpi,
             init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
+            graspg=self.graspg,
         )
         retcode = scf.run()
         if retcode == 0:
@@ -106,6 +115,7 @@ class SCFManager:
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=self.id + str(i - 1) if successful_run_exists else None,
+                graspg=self.graspg,
             )
             retcode = scf.run()
             if retcode == 0:
@@ -134,6 +144,7 @@ class SCFManager:
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=self.id + str(i - 1) if successful_run_exists else None,
+                graspg=self.graspg,
             )
             retcode = scf.run()
             if retcode == 0:

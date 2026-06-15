@@ -14,6 +14,7 @@ class SelfConsistentField:
         init_run: str | None = None,
         custom_Z: float | None = None,
         n_iterations: int = 100,
+        graspg: bool = False,
     ) -> None:
         self.execs = execs
         self.orbitals_optimise = self._expand_orbitals_relativistic(orbitals_optimise)
@@ -25,6 +26,7 @@ class SelfConsistentField:
         self.init_type = init_type
         self.custom_Z = custom_Z
         self.n_iterations = n_iterations
+        self.graspg = graspg
 
     def _expand_orbitals_relativistic(self, orbitals: str):
         if orbitals == "*":
@@ -67,7 +69,9 @@ class SelfConsistentField:
 
     def _create_rmcdhf_input(self, fname: str):
         grep_proc = subprocess.run(
-            'grep -c "*" rcsf.inp', shell=True, capture_output=True
+            f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
+            shell=True,
+            capture_output=True,
         )
         nblocks = int(grep_proc.stdout) + 1
 

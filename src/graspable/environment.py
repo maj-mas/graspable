@@ -24,9 +24,23 @@ class Environment:
         "rbiotransform",
         "rtransition",
     ]  # these programs have mpi support
+    graspg_prgs = [
+        "rcsfgenerate",
+        "rangular",
+        "rwfnestimate",
+        "rmcdhf",
+        "rsave",
+        "rci",
+        "jj2lsj",
+    ]
 
     def __init__(self, cfg: dict) -> None:
         self.cfg = cfg["env"]
+
+        if self.cfg["mpi"]["graspg"] and self.cfg["mpi"]["mem"]:
+            raise RuntimeError("graspg and mem options are incompatible.")
+        if self.cfg["mpi"]["graspg"] and not self.cfg["mpi"]["use"]:
+            raise RuntimeError("graspg needs mpi.")
 
     def setup(self) -> dict:  # TODO test case if dirs correctly created
         """Creates the necessary directories and files for the calculation.
@@ -88,14 +102,33 @@ class Environment:
                 raise RuntimeError(
                     f"Executable {identifier} not found in specified GRASP installation."
                 )
+
             exec = identifier
-            # setup mpi programs
-            if identifier in self.mpi_prgs and self.cfg["mpi"]:
-                exec = identifier + (
-                    "_mem_mpi"
-                    if (identifier == "rmcdhf" and self.cfg["mpi"]["mem"])
-                    else "_mpi"
-                )
+            # setup graspg programs if enabled
+            if (
+                identifier in self.graspg_prgs
+                and identifier not in self.mpi_prgs
+                and self.cfg["mpi"]["graspg"]
+            ):
+                if exec == "rcsfgenerate":
+                    exec = "rcsfggenerate_csfg"
+                else:
+                    exec += "_csfg"
+                # check again for graspg programs, user might not have compiled graspg but requested it in config
+                if not (grasp_bin_path / exec).exists():
+                    raise RuntimeError(
+                        f"Executable {exec} not found in specified GRASP installation."
+                    )
+
+            # setup mpi programs (and graspg if enabled)
+            if identifier in self.mpi_prgs and self.cfg["mpi"]["use"]:
+                exec = identifier
+                if self.cfg["mpi"]["graspg"] and identifier in self.graspg_prgs:
+                    exec += "_csfg_mpi"
+                elif exec == "rmcdhf" and self.cfg["mpi"]["mem"]:
+                    exec += "_mem_mpi"
+                else:
+                    exec += "_mpi"
                 # check again for mpi programs, user might not have compiled with mpi but requested it in config
                 if not (grasp_bin_path / exec).exists():
                     raise RuntimeError(

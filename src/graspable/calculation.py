@@ -19,6 +19,7 @@ class Calculation:
         self.mem = self.cfg["env"]["mpi"]["mem"]
 
         self.time = datetime.now()
+        self.init_time = datetime.now()
 
     def _setup_env(self):
         print(
@@ -53,7 +54,7 @@ class Calculation:
             orbitals=self.csfman.orbitals_even,
             type="mr",
             id="mr_even",
-            mpi=False,
+            mpi=True if self.cfg["env"]["mpi"]["graspg"] else False,  # g only has mpi
             final_star_run=True,
         )
         self.csfmr_even.run()
@@ -69,7 +70,7 @@ class Calculation:
             orbitals=self.csfman.orbitals_odd,
             type="mr",
             id="mr_odd",
-            mpi=False,
+            mpi=True if self.cfg["env"]["mpi"]["graspg"] else False,  # g only has mpi
             final_star_run=True,
         )
         self.csfmr_odd.run()
@@ -183,3 +184,5 @@ class Calculation:
 
         # perform cleanup
         self._cleanup()
+
+        print(f"All complete. {(self.init_time - self.time).total_seconds()} s\n")

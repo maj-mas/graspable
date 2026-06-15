@@ -1,4 +1,5 @@
 import subprocess
+import math
 
 
 class CIManager:
@@ -16,10 +17,14 @@ class CIManager:
         self.levels_per_j = levels_per_j
         self.id = id
         self.jj2lsj = jj2lsj
+        self.graspg = cfg["env"]["mpi"]["graspg"]
+        self.n_p = cfg["env"]["mpi"]["n_p"]
 
     def _create_rci_input(self, fname: str, state: str, qed: bool = True):
         grep_proc = subprocess.run(
-            'grep -c "*" rcsf.inp', shell=True, capture_output=True
+            f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
+            shell=True,
+            capture_output=True,
         )
         nblocks = int(grep_proc.stdout) + 1
 
@@ -49,6 +54,63 @@ class CIManager:
                     n = self.levels_per_j[i]
                 file.write(f"{n}\n")
 
+    def _create_rci_input_csfg(self, fname: str, state: str, qed: bool = True):
+        grep_proc = subprocess.run(
+            f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
+            shell=True,
+            capture_output=True,
+        )
+        nblocks = int(grep_proc.stdout) + 1
+
+        # TODO graspg assumes that all nodes are equivalent here
+        grep_proc = subprocess.run(
+            "grep 'MemAvailable' /proc/meminfo", shell=True, capture_output=True
+        )
+        meminfo_split = grep_proc.stdout.split()
+        mem_kb = int(meminfo_split[1])
+        mem_gb = mem_kb / 1024 / 1024
+        mem_per_proc = math.floor(
+            mem_gb / self.n_p
+        )  # must be an integer, this may lead to suboptimal memory usage if not neatly divisible
+        if mem_per_proc == 0:
+            raise RuntimeError(
+                f"n_p={self.n_p} and free memory {mem_gb} lead to zero GB per proc when rounded down. Reduce number of threads."
+            )
+
+        with open(fname, "w") as file:
+            file.write("y\n")  # TODO non-default options
+            file.write(f"{state}\n")
+            file.write(f"{'y' if self.qed_cfg['transverse'] and qed else 'n'}\n")
+            file.write(
+                f"{'y' if self.qed_cfg['transverse_all_freqs'] and qed else 'n'}\n"
+            )
+            file.write(
+                self.qed_cfg["scale"] + "\n"
+                if self.qed_cfg["transverse_all_freqs"] and qed
+                else ""
+            )
+            # graspg specific options, TODO hardcoded for now
+            file.write("n\n")  # limit breit n
+            file.write("100\n")  # limit breit n
+            file.write("n\n")  # limit breit l
+            file.write("100\n")  # limit breit l
+            file.write(f"{'y' if self.qed_cfg['vacpol'] and qed else 'n'}\n")
+            file.write(f"{'y' if self.qed_cfg['normal_ms'] and qed else 'n'}\n")
+            file.write(f"{'y' if self.qed_cfg['specific_ms'] and qed else 'n'}\n")
+            file.write(f"{'y' if self.qed_cfg['se'] and qed else 'n'}\n")
+            file.write(
+                str(self.qed_cfg["n_se"])
+                if self.qed_cfg["n_se"] is not None
+                else str(3) + "\n"
+            )
+            file.write(str(mem_per_proc) + "\n")
+            for i in range(nblocks):
+                if isinstance(self.levels_per_j, int):
+                    n = self.levels_per_j
+                else:
+                    n = self.levels_per_j[i]
+                file.write(f"{n}\n")
+
     def _create_jj2lsj_input(self, fname: str, state: str):
         with open(fname, "w") as file:
             file.write(state + "\n")
@@ -59,22 +121,48 @@ class CIManager:
     def run(self):
         if self.qed_cfg["with_and_without"]:
             subprocess.run(
-                [f"cp {self.id}.c {self.id}CI_noqed.c"], shell=True, capture_output=True
+                [
+                    f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI_noqed.{'c' if not self.graspg else 'g'}"
+                ],
+                shell=True,
+                capture_output=True,
             )
             subprocess.run(
                 [f"cp {self.id}.w {self.id}CI_noqed.w"], shell=True, capture_output=True
             )
-            self._create_rci_input(
-                f"input/rci_input_{self.id}_noqed", f"{self.id}CI_noqed", qed=False
-            )
+            if self.graspg:
+                subprocess.run(
+                    [f"cp {self.id}.l {self.id}CI_noqed.l"],
+                    shell=True,
+                    capture_output=True,
+                )
+            if not self.graspg:
+                self._create_rci_input(
+                    f"input/rci_input_{self.id}_noqed", f"{self.id}CI_noqed", qed=False
+                )
+            else:
+                self._create_rci_input_csfg(
+                    f"input/rci_input_{self.id}_noqed", f"{self.id}CI_noqed", qed=False
+                )
 
         subprocess.run(
-            [f"cp {self.id}.c {self.id}CI.c"], shell=True, capture_output=True
+            [
+                f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI.{'c' if not self.graspg else 'g'}"
+            ],
+            shell=True,
+            capture_output=True,
         )
         subprocess.run(
             [f"cp {self.id}.w {self.id}CI.w"], shell=True, capture_output=True
         )
-        self._create_rci_input(f"input/rci_input_{self.id}", f"{self.id}CI")
+        if self.graspg:
+            subprocess.run(
+                [f"cp {self.id}.l {self.id}CI.l"], shell=True, capture_output=True
+            )
+        if not self.graspg:
+            self._create_rci_input(f"input/rci_input_{self.id}", f"{self.id}CI")
+        else:
+            self._create_rci_input_csfg(f"input/rci_input_{self.id}", f"{self.id}CI")
 
         if self.qed_cfg["with_and_without"]:
             print("Performing extra CI step without QED...")
