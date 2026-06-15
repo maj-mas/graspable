@@ -185,4 +185,4 @@ class Calculation:
         # perform cleanup
         self._cleanup()
 
-        print(f"All complete. {(self.init_time - datetime.now()).total_seconds()} s\n")
+        print(f"All complete. {(datetime.now() - self.init_time).total_seconds()} s\n")
