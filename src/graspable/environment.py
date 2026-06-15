@@ -3,6 +3,8 @@ from pathlib import Path
 
 
 class Environment:
+    """Sets up working folders, mpi temporary directories and configures the grasp executables to be used based on the config."""
+
     execs = {
         "rnucleus": "rnucleus",
         "rcsfgenerate": "rcsfgenerate",
@@ -32,9 +34,13 @@ class Environment:
         "rsave",
         "rci",
         "jj2lsj",
-    ]
+    ]  # these programs are in graspg
 
     def __init__(self, cfg: dict) -> None:
+        """
+        Raises:
+            RuntimeError: Incorrect configuration related to graspg.
+        """
         self.cfg = cfg["env"]
 
         if self.cfg["mpi"]["graspg"] and self.cfg["mpi"]["mem"]:
@@ -143,7 +149,7 @@ class Environment:
                     self.cfg["mpi"]["invoke_cmd"] + " " + self.execs[identifier]
                 )
 
-        # also keep no mpi versions of these two
+        # also keep no mpi versions of these two (only used if not graspg due to incompatible file formats)
         self.execs["rmcdhf_nmpi"] = str(grasp_bin_path / "rmcdhf")
         self.execs["rangular_nmpi"] = str(grasp_bin_path / "rangular")
 

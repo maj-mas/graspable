@@ -2,6 +2,8 @@ import subprocess
 
 
 class Nuclear:
+    """Generates nuclear data for GRASP calculation based on config."""
+
     def __init__(self, cfg: dict, execs: dict) -> None:
         self.cfg = cfg["nuclear"]
         self.execs = execs

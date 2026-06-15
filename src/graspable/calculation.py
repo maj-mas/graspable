@@ -11,6 +11,11 @@ from .cleanup import Clean
 
 
 class Calculation:
+    """Performs a GRASP calculation defined completely by a dictionary containing config entries. For documentation of the config keys and their valid values, see the default empty config shipped with the code.
+
+    Note that all config entries must be present to ensure no crashes. If a Calculation object is created in the Main class by claling graspable from the command line, default values from the empty config are inserted so that non-required values can be omitted.
+    """
+
     def __init__(self, cfg: dict) -> None:
         self.cfg = cfg
 
@@ -45,45 +50,31 @@ class Calculation:
         self.time = datetime.now()
 
     def _mr_scf(self):  # TODO more graceful behaviour if no even or odd state
-        print("Performing SCF procedure for even multireference...")
-        self.csfmr_even = SCFManager(
-            self.cfg,
-            self.execs,
-            strategy=RandomStrategy,
-            state="mr_even",
-            orbitals=self.csfman.orbitals_even,
-            type="mr",
-            id="mr_even",
-            mpi=True if self.cfg["env"]["mpi"]["graspg"] else False,  # g only has mpi
-            final_star_run=True,
-        )
-        self.csfmr_even.run()
-        print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
-        self.time = datetime.now()
-
-        print("Performing SCF procedure for odd multireference...")
-        self.csfmr_odd = SCFManager(
-            self.cfg,
-            self.execs,
-            strategy=RandomStrategy,
-            state="mr_odd",
-            orbitals=self.csfman.orbitals_odd,
-            type="mr",
-            id="mr_odd",
-            mpi=True if self.cfg["env"]["mpi"]["graspg"] else False,  # g only has mpi
-            final_star_run=True,
-        )
-        self.csfmr_odd.run()
-        print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
-        self.time = datetime.now()
+        parities = ["even", "odd"]
+        states = ["mr_even", "mr_odd"]
+        orbitals_l = [self.csfman.orbitals_even, self.csfman.orbitals_odd]
+        for parity, state, orbitals in zip(parities, states, orbitals_l, strict=True):
+            print(f"Performing SCF procedure for {parity} multireference...")
+            self.csfmr = SCFManager(
+                self.cfg,
+                self.execs,
+                strategy=RandomStrategy,
+                state=state,
+                orbitals=orbitals,
+                type="mr",
+                id=state,
+                mpi=True
+                if self.cfg["env"]["mpi"]["graspg"]
+                else False,  # g only has mpi
+                final_star_run=True,
+            )
+            self.csfmr.run()
+            print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
+            self.time = datetime.now()
 
     def _as_scf(self):
-        if self.cfg["states"]["split"]:
-            n_min = self.csfman.n_min
-            n_max = self.csfman.n_max
-        else:
-            n_min = (0,)
-            n_max = 1
+        n_min = self.csfman.n_min
+        n_max = self.csfman.n_max
 
         prev_prefix = "mr_"
         prev_suffix = "_all"
@@ -94,7 +85,6 @@ class Calculation:
                 )
                 prev_state = prev_prefix + parity + prev_suffix
                 state = f"as_{parity}{n}"
-                # orbitals = " ".join(self.csfman.active_orbitals_given_n(n))
                 orbitals = self.csfman.active_orbitals_given_n(n)
                 orbitals.append(f"{n}*")
                 print(orbitals)
@@ -117,7 +107,7 @@ class Calculation:
             prev_suffix = str(n)
 
     def _as_ci(self):
-        if self.cfg["states"]["split"] and self.cfg["ci"]["as_expansion"]:
+        if self.cfg["ci"]["as_expansion"]:
             n_min = self.csfman.n_min
             n_max = self.csfman.n_max
         else:

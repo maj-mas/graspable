@@ -4,6 +4,8 @@ from copy import deepcopy
 
 
 class CSFManager:
+    """Class that creates lists of CSFs for the calculation based on the configuration."""
+
     oam_symbols = {
         "s": 0,
         "p": 1,
@@ -27,25 +29,60 @@ class CSFManager:
         self._assemble_states()
 
     def _full_occupation(self, l: int) -> int:
+        """Number of electrons that fit into a nonrelativistic l-subshell.
+
+        Args:
+            l (int): OAM
+
+        Returns:
+            int: Max occupation.
+        """
         return 2 * (2 * l + 1)
 
     def _decompose_orbital(self, orbital: str) -> tuple(int, int):
+        """Parses an orbital string such as '10h' into n=10 and l=5 using regexes.
+
+        Args:
+            orbital (str): Orbital string
+
+        Raises:
+            RuntimeError: Raised if orbital cannot be split according to rule.
+
+        Returns:
+            tuple(int, int): (n, l)
+        """
         decomp = re.findall(r"[a-zA-Z]+|\d+", orbital)
         if len(decomp) > 2:
             raise RuntimeError(f"Attempted to split an invalid orbital {orbital}.")
         return int(decomp[0]), self.oam_symbols[decomp[1]]
 
     def _decompose_shell(self, shell: str) -> tuple(int, int, int):
+        """Parses a non-relativistic subshell string including occupation such as '10h4' into n=10, l=5 and n_electrons=4 using regexes.
+
+        Args:
+            shell (str): Subshell string
+
+        Raises:
+            RuntimeError: Raised if subshell cannot be split according to rule.
+
+        Returns:
+            tuple(int, int, int): (n, l, n_electrons)
+        """
         decomp = re.findall(r"[a-zA-Z]+|\d+", shell)
         if len(decomp) > 3:
             raise RuntimeError(f"Attempted to split an invalid shell {shell}.")
         return int(decomp[0]), self.oam_symbols[decomp[1]], int(decomp[2])
 
     def _parse_core(self):
+        """Converts the core string from the config into a list of orbitals in grasp notation, e.g. 1s 2s -> 1s(2,c) 2s(2,c) that is then stored in self.core_str. It is assumed that core orbitals are always full.
+
+        Raises:
+            RuntimeError: Raised if an invalid orbital such as 1p is encountered.
+        """
         if self.cfg["core"] is not None:
             self.core = self.cfg["core"].split(" ")
         else:
-            self.core = []
+            self.core = []  # if core is None, the loop below will be over an empty list an core_str will be empty, which is fine!
         self.core_str = ""
         for orbital in self.core:
             n, l = self._decompose_orbital(orbital)
@@ -56,6 +93,11 @@ class CSFManager:
             self.core_str += f"{orbital}({self._full_occupation(l)},c)"
 
     def _parse_active(self):
+        """Parses the string defining the active orbitals, which are allowed to contain the wildcard symbol *. In the future, support for more detailed occupation specification will be added (e.g. 'd2p orbital can have 3 to 5 electrons').
+
+        Raises:
+            RuntimeError: Raised if an orbital is found both in the core and the active list.
+        """
         if self.cfg["active"] is dict:
             raise NotImplementedError(
                 "Detailed active space specification is not implemented yet."
@@ -72,6 +114,17 @@ class CSFManager:
                 )  # TODO nice test case candidate
 
     def _check_active(self, orbital: str) -> bool:
+        """Determines wether an orbital is active. This requires some care because the list of active orbitals can contain wildcards (or even just be '*').
+
+        Args:
+            orbital (str): Orbital string, e.g. '3p'
+
+        Raises:
+            RuntimeError: Raised if an invalid orbital such as 1p is encountered.
+
+        Returns:
+            bool: True if active, False otherwise.
+        """
         # check valid
         n, l = self._decompose_orbital(orbital)
         if l >= n:
@@ -91,6 +144,17 @@ class CSFManager:
         return False
 
     def _assemble_state(self, state: str) -> str:
+        """Converts a simple non-relativistic config string such as 2s2 2p1 to GRASP notation, e.g. 2s(2,*) 2p(1,*) depending on which orbitals are configured active or closed.
+
+        Args:
+            state (str): State string.
+
+        Raises:
+            RuntimeError: Raised if an orbital is found both in the core and the active list.
+
+        Returns:
+            str: GRASP formatted configuration string.
+        """
         state_grasp = self.core_str
         state_shells = state.split(" ")
         for shell in state_shells:
@@ -112,6 +176,14 @@ class CSFManager:
         return state_grasp
 
     def _orbitals_from_state(self, state: str) -> list[str]:
+        """Splits a simple non-relativistic config string into orbital strings, e.g. '2s2 2p1' -> ["2s", "2p"]
+
+        Args:
+            state (str): State string
+
+        Returns:
+            list[str]: Split orbitals, occupation discarded.
+        """
         orbitals = []
         state_shells = state.split(" ")
         for shell in state_shells:
@@ -121,6 +193,7 @@ class CSFManager:
         return orbitals
 
     def _assemble_states(self):
+        """Parses states from the config to grasp format and creates a list of all orbitals that appear in the configuration for both parities."""
         self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
         self.states_even = []
         for state in self.cfg["multireference"]["even"]:
@@ -150,6 +223,16 @@ class CSFManager:
         j2_max: int,
         manual_basis: str | None = None,
     ):
+        """Creates an input file for the CSF list generating programs of grasp(g).
+
+        Args:
+            fname (str): File name.
+            states (list[str]): List of configurations in grasp format.
+            exc (int): Number of excitations using grasp sign convention.
+            j2_min (int): Minimum value of 2J for states to be generated.
+            j2_max (int): Maximum value of 2J for states to be generated.
+            manual_basis (str | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. Defaults to None.
+        """
         with open(f"input/{fname}", "w") as file:
             if not self.graspg:
                 file.write("*\n")  # default order
@@ -166,6 +249,14 @@ class CSFManager:
             file.write("n\n")  # end
 
     def _select_split(self) -> tuple(int, int):
+        """Finds highest n in even and odd configs and highest n in basis set.
+
+        Raises:
+            RuntimeError: Active space should not be too small.
+
+        Returns:
+            tuple(int, int): (n_max_configs, n_max_basis)
+        """
         highest_n_state = 0
         for states_parity in [
             self.cfg["multireference"]["even"],
@@ -185,6 +276,12 @@ class CSFManager:
         return highest_n_state, highest_n_basis
 
     def _create_rcsfsplit_input(self, fname: str, state_name: str):
+        """Creates an input file for the CSF list splitting programs of grasp.
+
+        Args:
+            fname (str): File name.
+            state_name (str): Name of state on disk.
+        """
         self.n_min, self.n_max = self._select_split()
         self.n_sets = self.n_max - self.n_min + 1
         with open(f"input/{fname}", "w") as file:
@@ -202,6 +299,11 @@ class CSFManager:
                 file.write(f"{n}\n")
 
     def _mr_basis(self) -> str:
+        """Selects a basis set for the initial calculation on the multireference only (no excitations). This is required due to an oddity with graspg.
+
+        Returns:
+            str: Basis set string, e.g. '5s,4p,3d'.
+        """
         basis = ""
         for oam_symbol in list(self.oam_symbols.keys()):
             highest_n = 0
@@ -222,6 +324,7 @@ class CSFManager:
         return basis
 
     def _gen_mr(self):
+        """Generates CSFs for the multireference without excitations for both parities."""
         mr_basis = self._mr_basis()
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_mr_even",
@@ -262,6 +365,7 @@ class CSFManager:
         subprocess.run(["cp rcsf.out mr_odd.c"], shell=True)
 
     def _gen_mr_csfg(self):
+        """Generates CSFs for the multireference without excitations for both parities, using graspg."""
         mr_basis = self._mr_basis()
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_mr_even",
@@ -304,6 +408,7 @@ class CSFManager:
         subprocess.run(["cp rlabel.out mr_odd_label"], shell=True)
 
     def _gen_as(self):
+        """Generates lists of CSFs for the active space for both parities."""
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_as_even",
             self.states_even,
@@ -341,6 +446,7 @@ class CSFManager:
         subprocess.run(["cp rcsf.out as_odd.c"], shell=True)
 
     def _gen_as_csfg(self):
+        """Generates lists of CSFs for the active space for both parities, using graspg."""
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_as_even",
             self.states_even,
@@ -380,6 +486,7 @@ class CSFManager:
         subprocess.run(["cp rlabel.out as_odd_label"], shell=True)
 
     def _split_as(self):
+        """Splits the list of active space CSFs by principal quantum number for both parities."""
         self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
         rcsfsplit_proc_even = subprocess.run(
             [
@@ -399,6 +506,7 @@ class CSFManager:
         print(f"rcsfsplit completed with exit code {rcsfsplit_proc_odd.returncode}.")
 
     def _split_as_csfg(self):
+        """Splits the list of active space CSFs by principal quantum number for both parities. Since rcsfsplit is not implemented for the graspg format, we achieve the same result using repeated calls to rcsfggenerate_csfg, resulting in somewhat of a longer runtime."""
         print(
             "Performing AS split manually since graspg ins enabled, this step might take a little longer."
         )
@@ -456,18 +564,25 @@ class CSFManager:
             subprocess.run([f"cp rlabel.out as_odd{n}_label"], shell=True)
 
     def setup(self):
+        """Generates lists of CSFs according to the config. Must be called after initialisation."""
         if not self.graspg:
             self._gen_mr()
             self._gen_as()
-            if self.cfg["split"]:
-                self._split_as()
+            self._split_as()
         else:
             self._gen_mr_csfg()
             self._gen_as_csfg()
-            if self.cfg["split"]:
-                self._split_as_csfg()
+            self._split_as_csfg()
 
     def active_orbitals_given_n(self, n: int) -> list[str]:
+        """Returns a list of non-relativistic orbitals in the active set that match the given principal quantum number.
+
+        Args:
+            n (int): Principal quantum number.
+
+        Returns:
+            list[str]: List of active orbitals at n.
+        """
         active_list = []
         basis_set = self.cfg["basis_set"].split(",")
         for l in range(n):

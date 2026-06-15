@@ -46,7 +46,6 @@ states:
   core: null # space delimited list of frozen core subshells. here, 4p refers to both the 4p and 4prelativistic subshells
   active: null # space delimited list of active shells or object specifying minimum occupation for every shell
   excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
-  split: false # whether to split as for convergence check
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: null # minimum value of 2J for generated CSFs
   2j_max: null # maximum value of 2J for generated CSFs
