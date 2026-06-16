@@ -5,6 +5,8 @@ from .scf import SelfConsistentField
 
 
 class SCFManager:
+    """Class that performs self-consistent field calculations on a given state following an implementation of AbstractOptimisationStrategy that determines the order of orbital optimisation."""
+
     init_type_map = {
         "tf": 2,
         "screened_h": 3,
@@ -14,7 +16,7 @@ class SCFManager:
     def __init__(
         self,
         cfg: dict,
-        execs: list[str],
+        execs: dict,
         strategy: AbstractOptimisationStrategy,
         state: str,
         orbitals: list[str],
@@ -25,6 +27,24 @@ class SCFManager:
         final_star_run: bool = False,
         run_limit: int = 100,
     ) -> None:
+        """Constructs an SCFManager instance.
+
+        Args:
+            cfg (dict): Config
+            execs (dict): Map of grasp commands
+            strategy (AbstractOptimisationStrategy): Orbital optimisation strategy that produces consequent sets of orbitals to optimise together and checks for convergence.
+            state (str): name of state on disk
+            orbitals (list[str]): Orbitals to include in optimisation
+            type (str): "mr" or "as" depending on whether the calculation is performed for the only multireference or for the active space.
+            id (str): TODO same as state, rm
+            mpi (bool, optional): Whether mpi is used (note: if graspg is enabled, mpi must always be on). Defaults to True.
+            init_run (str | None, optional): Unsued? TODO rm. Defaults to None.
+            final_star_run (bool, optional): Whether to perform a final SCF calculation for all orbitals in orbitals. Defaults to False.
+            run_limit (int, optional): Maximum number of calls to rmcdhf. Defaults to 100.
+
+        Raises:
+            RuntimeError: Raised if type is not "as" or "mr".
+        """
         self.cfg = cfg
         self.execs = execs
         self.strategy_class = strategy
@@ -48,7 +68,7 @@ class SCFManager:
         self.run_limit = run_limit
 
         if cfg["angular"]["full"]:
-            self.rangular_input = "<<EOF\ny\nEOF"
+            self.rangular_input = "<<EOF\ny\nEOF"  # rangular only takes a single input
         else:
             raise NotImplementedError(
                 "Only full interaction at angular integration supported thus far."
@@ -57,6 +77,13 @@ class SCFManager:
         self.graspg = cfg["env"]["mpi"]["graspg"]
 
     def run(self):
+        """Runs the SCF procedure. Must be called after initialisation.
+
+        Raises:
+            RuntimeError: Raised if input files not found on disk.
+            RuntimeError: Raised if no convergence is reached within the specified number of calls to rmcdhf.
+            RuntimeError: Raised if the final * run does not converge.
+        """
         cp_proc = subprocess.run(
             [f"cp {self.state}.c rcsf{'g' if self.graspg else ''}.inp"], shell=True
         )
@@ -152,5 +179,3 @@ class SCFManager:
                 strategy.update_graph_multiple(optimize_orbitals.split(" "))
             else:
                 raise RuntimeError("Final * run of SFC failed.")
-
-        # TODO option for a final run with "*"

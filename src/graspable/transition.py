@@ -5,7 +5,7 @@ class Transition:
     def __init__(
         self,
         cfg: dict,
-        execs: list[str],
+        execs: dict,
         state_even: str | None = None,
         state_odd: str | None = None,
     ) -> None:

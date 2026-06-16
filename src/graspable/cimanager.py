@@ -3,14 +3,25 @@ import math
 
 
 class CIManager:
+    """Class that performs configuration-interaction calculations on a given state."""
+
     def __init__(
         self,
         cfg: dict,
-        execs: list[str],
+        execs: dict,
         levels_per_j: int | list[int],
         id: str,
         jj2lsj: bool = True,
     ) -> None:
+        """Instantiates CIManager object.
+
+        Args:
+            cfg (dict): Configuration
+            execs (dict): Map of grasp executables
+            levels_per_j (int | list[int]):  Number of levels per symmetry block, applies either to all equally if int or can be specified per block if list[int].
+            id (str): Name to save state as.
+            jj2lsj (bool, optional): Whether to perform jj -> lsj label transformation. Defaults to True.
+        """
         self.cfg = cfg["ci"]
         self.execs = execs
         self.qed_cfg = cfg["ci"]["qed"]
@@ -21,6 +32,13 @@ class CIManager:
         self.n_p = cfg["env"]["mpi"]["n_p"]
 
     def _create_rci_input(self, fname: str, state: str, qed: bool = True):
+        """Creates an input file for the configuration-interaction programs of grasp.
+
+        Args:
+            fname (str): Output file name
+            state (str): Name of state
+            qed (bool, optional): Whether to include QED. Defaults to True.
+        """
         grep_proc = subprocess.run(
             f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
             shell=True,
@@ -55,6 +73,16 @@ class CIManager:
                 file.write(f"{n}\n")
 
     def _create_rci_input_csfg(self, fname: str, state: str, qed: bool = True):
+        """Creates an input file for the configuration-interaction programs of graspg.
+
+        Args:
+            fname (str): Output file name
+            state (str): Name of state
+            qed (bool, optional): Whether to include QED. Defaults to True.
+
+        Raises:
+            RuntimeError: Raised if there is less than 1GB available per proc.
+        """
         grep_proc = subprocess.run(
             f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
             shell=True,
@@ -119,6 +147,7 @@ class CIManager:
             file.write("y\n")  # TODO non default
 
     def run(self):
+        """Performs the CI calculation. Must be called after initialisation."""
         if self.qed_cfg["with_and_without"]:
             subprocess.run(
                 [
