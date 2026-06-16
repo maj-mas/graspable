@@ -39,7 +39,7 @@ class CSFManager:
         """
         return 2 * (2 * l + 1)
 
-    def _decompose_orbital(self, orbital: str) -> tuple(int, int):
+    def _decompose_orbital(self, orbital: str) -> tuple[int, int]:
         """Parses an orbital string such as '10h' into n=10 and l=5 using regexes.
 
         Args:
@@ -56,7 +56,7 @@ class CSFManager:
             raise RuntimeError(f"Attempted to split an invalid orbital {orbital}.")
         return int(decomp[0]), self.oam_symbols[decomp[1]]
 
-    def _decompose_shell(self, shell: str) -> tuple(int, int, int):
+    def _decompose_shell(self, shell: str) -> tuple[int, int, int]:
         """Parses a non-relativistic subshell string including occupation such as '10h4' into n=10, l=5 and n_electrons=4 using regexes.
 
         Args:
@@ -248,7 +248,7 @@ class CSFManager:
             file.write(str(exc) + "\n")  # # of excitations
             file.write("n\n")  # end
 
-    def _select_split(self) -> tuple(int, int):
+    def _select_split(self) -> tuple[int, int]:
         """Finds highest n in even and odd configs and highest n in basis set.
 
         Raises:
