@@ -54,15 +54,23 @@ class SelfConsistentField:
         Returns:
             _type_: Space delimited string of orbitals with wild card appended.
         """
-        if orbitals == "*":
+        if "*" in orbitals:
             return orbitals
         relativistic_orbitals = ""
         orbitals_l = orbitals.split(" ")
+        first = True
         for orbital in orbitals_l:
-            if orbital[-1] == "s":
-                relativistic_orbitals += f" {orbital}"
+            if first:
+                if orbital[-1] == "s":
+                    relativistic_orbitals += f"{orbital}"
+                else:
+                    relativistic_orbitals += f"{orbital}*"
             else:
-                relativistic_orbitals += f" {orbital}*"
+                if orbital[-1] == "s":
+                    relativistic_orbitals += f" {orbital}"
+                else:
+                    relativistic_orbitals += f" {orbital}*"
+            first = False
         return relativistic_orbitals
 
     # TODO support non default options?
@@ -121,7 +129,7 @@ class SelfConsistentField:
                     n = self.levels_per_j
                 else:
                     n = self.levels_per_j[i]
-                file.write(f"{n}\n")
+                file.write(f"{'1-' if n != 1 else ''}{n}\n")
             file.write("5\n")  # standard level weights TODO
             file.write(f"{self.orbitals_optimise}\n")
             file.write(f"{self.orbitals_spectroscopic}\n")

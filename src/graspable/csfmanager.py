@@ -223,7 +223,7 @@ class CSFManager:
         j2_max: int,
         manual_basis: str | None = None,
     ):
-        """Creates an input file for the CSF list generating programs of grasp(g).
+        """Creates an input file for the CSF list generating programs of graspg.
 
         Args:
             fname (str): File name.
@@ -243,8 +243,47 @@ class CSFManager:
                 file.write(self.cfg["basis_set"] + "\n")  # as basis set
             else:
                 file.write(manual_basis + "\n")  # as basis set
-            file.write(str(j2_min) + "\n")  # 2j lower
-            file.write(str(j2_max) + "\n")  # 2j upper
+            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+            file.write(str(exc) + "\n")  # # of excitations
+            file.write("n\n")  # end
+
+    def _create_rcsfgenerate_input_graspg(
+        self,
+        fname: str,
+        states: list[str],
+        exc: int,
+        j2_min: int,
+        j2_max: int,
+        manual_basis: str | None = None,
+    ):
+        """Creates an input file for the CSF list generating programs of graspg.
+
+        Args:
+            fname (str): File name.
+            states (list[str]): List of configurations in grasp format.
+            exc (int): Number of excitations using grasp sign convention.
+            j2_min (int): Minimum value of 2J for states to be generated.
+            j2_max (int): Maximum value of 2J for states to be generated.
+            manual_basis (str | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. Defaults to None.
+        """
+        mr_basis = self._mr_basis()
+        with open(f"input/{fname}", "w") as file:
+            # for graspg: mr only first
+            file.write("0\n")  # no pre-def core
+            file.writelines(state + "\n" for state in states)  # states
+            file.write("\n")  # end states
+            file.write(mr_basis + "\n")  # as basis set
+            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+            file.write("0\n")  # # of excitations
+            file.write("y\n")  # end
+            file.writelines(state + "\n" for state in states)  # states
+            file.write("\n")  # end states
+            # then add as
+            if manual_basis is None:
+                file.write(self.cfg["basis_set"] + "\n")  # as basis set
+            else:
+                file.write(manual_basis + "\n")  # as basis set
+            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
             file.write(str(exc) + "\n")  # # of excitations
             file.write("n\n")  # end
 
@@ -384,8 +423,8 @@ class CSFManager:
         print(
             f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
         )
-        subprocess.run(["cp rcsfg.out mr_even.c"], shell=True)
-        subprocess.run(["cp rlabel.out mr_even_label"], shell=True)
+        subprocess.run(["cp rcsfg.out mr_even.g"], shell=True)
+        subprocess.run(["cp rlabel.out mr_even.l"], shell=True)
 
         self._create_rcsfgenerate_input(
             "rcsfgenerate_input_mr_odd",
@@ -404,8 +443,8 @@ class CSFManager:
         print(
             f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
         )
-        subprocess.run(["cp rcsfg.out mr_odd.c"], shell=True)
-        subprocess.run(["cp rlabel.out mr_odd_label"], shell=True)
+        subprocess.run(["cp rcsfg.out mr_odd.g"], shell=True)
+        subprocess.run(["cp rlabel.out mr_odd.l"], shell=True)
 
     def _gen_as(self):
         """Generates lists of CSFs for the active space for both parities."""
@@ -447,7 +486,7 @@ class CSFManager:
 
     def _gen_as_csfg(self):
         """Generates lists of CSFs for the active space for both parities, using graspg."""
-        self._create_rcsfgenerate_input(
+        self._create_rcsfgenerate_input_graspg(
             "rcsfgenerate_input_as_even",
             self.states_even,
             self.cfg["excitations"],
@@ -463,10 +502,10 @@ class CSFManager:
         print(
             f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
         )
-        subprocess.run(["cp rcsfg.out as_even.c"], shell=True)
-        subprocess.run(["cp rlabel.out as_even_label"], shell=True)
+        subprocess.run(["cp rcsfg.out as_even.g"], shell=True)
+        subprocess.run(["cp rlabel.out as_even.l"], shell=True)
 
-        self._create_rcsfgenerate_input(
+        self._create_rcsfgenerate_input_graspg(
             "rcsfgenerate_input_as_odd",
             self.states_odd,
             self.cfg["excitations"],
@@ -482,11 +521,13 @@ class CSFManager:
         print(
             f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
         )
-        subprocess.run(["cp rcsfg.out as_odd.c"], shell=True)
-        subprocess.run(["cp rlabel.out as_odd_label"], shell=True)
+        subprocess.run(["cp rcsfg.out as_odd.g"], shell=True)
+        subprocess.run(["cp rlabel.out as_odd.l"], shell=True)
 
     def _split_as(self):
         """Splits the list of active space CSFs by principal quantum number for both parities."""
+        if self.graspg:
+            subprocess.run(["cp as_even.l rlabel.inp"], shell=True)
         self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
         rcsfsplit_proc_even = subprocess.run(
             [
@@ -496,6 +537,8 @@ class CSFManager:
         )
         print(f"rcsfsplit completed with exit code {rcsfsplit_proc_even.returncode}.")
 
+        if self.graspg:
+            subprocess.run(["cp as_odd.l rlabel.inp"], shell=True)
         self._create_rcsfsplit_input("rcsfsplit_input_odd", "as_odd")
         rcsfsplit_proc_odd = subprocess.run(
             [
@@ -508,7 +551,7 @@ class CSFManager:
     def _split_as_csfg(self):
         """Splits the list of active space CSFs by principal quantum number for both parities. Since rcsfsplit is not implemented for the graspg format, we achieve the same result using repeated calls to rcsfggenerate_csfg, resulting in somewhat of a longer runtime."""
         print(
-            "Performing AS split manually since graspg ins enabled, this step might take a little longer."
+            "Performing AS split manually since graspg is enabled, this step might take a little longer."
         )
         self.n_min, self.n_max = self._select_split()
         self.n_sets = self.n_max - self.n_min + 1
@@ -523,7 +566,7 @@ class CSFManager:
                 else:
                     basis += orbital
 
-            self._create_rcsfgenerate_input(
+            self._create_rcsfgenerate_input_graspg(
                 f"rcsfgenerate_input_as_even_split{n}",
                 self.states_even,
                 self.cfg["excitations"],
@@ -540,10 +583,10 @@ class CSFManager:
             print(
                 f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_even.returncode}."
             )
-            subprocess.run([f"cp rcsfg.out as_even{n}.c"], shell=True)
-            subprocess.run([f"cp rlabel.out as_even{n}_label"], shell=True)
+            subprocess.run([f"cp rcsfg.out as_even{n}.g"], shell=True)
+            subprocess.run([f"cp rlabel.out as_even{n}.l"], shell=True)
 
-            self._create_rcsfgenerate_input(
+            self._create_rcsfgenerate_input_graspg(
                 f"rcsfgenerate_input_as_odd_split{n}",
                 self.states_odd,
                 self.cfg["excitations"],
@@ -560,8 +603,8 @@ class CSFManager:
             print(
                 f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_odd.returncode}."
             )
-            subprocess.run([f"cp rcsfg.out as_odd{n}.c"], shell=True)
-            subprocess.run([f"cp rlabel.out as_odd{n}_label"], shell=True)
+            subprocess.run([f"cp rcsfg.out as_odd{n}.g"], shell=True)
+            subprocess.run([f"cp rlabel.out as_odd{n}.l"], shell=True)
 
     def setup(self):
         """Generates lists of CSFs according to the config. Must be called after initialisation."""
@@ -572,7 +615,8 @@ class CSFManager:
         else:
             self._gen_mr_csfg()
             self._gen_as_csfg()
-            self._split_as_csfg()
+            self._split_as()
+            # self._split_as_csfg()
 
     def active_orbitals_given_n(self, n: int) -> list[str]:
         """Returns a list of non-relativistic orbitals in the active set that match the given principal quantum number.

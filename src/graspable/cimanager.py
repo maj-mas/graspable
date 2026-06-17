@@ -127,9 +127,9 @@ class CIManager:
             file.write(f"{'y' if self.qed_cfg['specific_ms'] and qed else 'n'}\n")
             file.write(f"{'y' if self.qed_cfg['se'] and qed else 'n'}\n")
             file.write(
-                str(self.qed_cfg["n_se"])
+                str(self.qed_cfg["n_se"]) + "\n"
                 if self.qed_cfg["n_se"] is not None
-                else str(3) + "\n"
+                else str(0) + "\n"
             )
             file.write(str(mem_per_proc) + "\n")
             for i in range(nblocks):

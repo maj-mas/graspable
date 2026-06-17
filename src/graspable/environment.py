@@ -28,6 +28,7 @@ class Environment:
     ]  # these programs have mpi support
     graspg_prgs = [
         "rcsfgenerate",
+        "rcsfsplit",
         "rangular",
         "rwfnestimate",
         "rmcdhf",
@@ -118,6 +119,8 @@ class Environment:
             ):
                 if exec == "rcsfgenerate":
                     exec = "rcsfggenerate_csfg"
+                elif exec == "rcsfsplit":
+                    exec = "rcsfgsplit_csfg"
                 else:
                     exec += "_csfg"
                 # check again for graspg programs, user might not have compiled graspg but requested it in config

@@ -51,15 +51,20 @@ class SCFManager:
         self.state = state
         self.orbitals = orbitals
 
+        self.active_orbitals = cfg["states"]["active"].split(" ")
+
         self.type = type
         if type != "mr" and type != "as":
             raise RuntimeError(f"Invalid type {type} passed to SCFManager.")
         if type == "mr":
             self.orbitals_spectroscopic = "*"  # mr states need to be good
         if type == "as":
-            self.orbitals_spectroscopic = (
-                ""  # correlation states can have e.g. wrong # of nodes
-            )
+            self.orbitals_spectroscopic = ""
+            # spectros = []
+            # for orbital in self.orbitals:
+            #     if orbital in self.active_orbitals:
+            #         spectros.append(orbital)
+            # self.orbitals_spectroscopic = " ".join(spectros)
 
         self.id = id
         self.mpi = mpi
@@ -85,14 +90,19 @@ class SCFManager:
             RuntimeError: Raised if the final * run does not converge.
         """
         cp_proc = subprocess.run(
-            [f"cp {self.state}.c rcsf{'g' if self.graspg else ''}.inp"], shell=True
+            [
+                f"cp {self.state}.{'g' if self.graspg else 'c'} rcsf{'g' if self.graspg else ''}.inp"
+            ],
+            shell=True,
         )
         if cp_proc.returncode != 0:
-            raise RuntimeError(f"Error copying {self.state}.c to rcsf.inp")
+            raise RuntimeError(
+                f"Error copying {self.state}.{'g' if self.graspg else 'c'} to rcsf{'g' if self.graspg else ''}.inp"
+            )
         if self.graspg:
-            cp_proc = subprocess.run([f"cp {self.state}_label rlabel.inp"], shell=True)
+            cp_proc = subprocess.run([f"cp {self.state}.l rlabel.inp"], shell=True)
             if cp_proc.returncode != 0:
-                raise RuntimeError(f"Error copying {self.state}_label to rlabel.inp")
+                raise RuntimeError(f"Error copying {self.state}.l to rlabel.inp")
 
         rangular_exec = (
             self.execs["rangular"] if self.mpi else self.execs["rangular_nmpi"]
@@ -117,6 +127,7 @@ class SCFManager:
             levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
             mpi=self.mpi,
             init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
+            init_run=self.init_run,
             graspg=self.graspg,
         )
         retcode = scf.run()

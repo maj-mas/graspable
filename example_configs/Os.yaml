@@ -1,16 +1,21 @@
 # information about the computing environment
 env:
-  grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
+  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
   working_dir: /home/majam/code/graspable_data/Os/work # path for intermediate but not temporary files
   output_dir: /home/majam/code/graspable_data/Os # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
-  result_filetypes: [".cm", ".m", ".lsj", ".ct"] # types of result files that should be moved to output_dir for savekeeping
+  result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
     use: true # whether to use mpi
     n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
     invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/Os/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
-    mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
   clean: false
+  improve: false
+  keep_log: true
+  keep_input: true
+  keep_intermediate: true
 
 # metadata, no impact on calculations
 meta:
@@ -50,28 +55,28 @@ orbital_init:
 # TODO debug options, level weigths
 mr_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 3 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the scf procedure for the active space
 # TODO debug options, level weigths
 as_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 3 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the ci calculation
 # TODO debug options
 ci:
   as_expansion: true # whether to perform CI at every step as the active space is expanded by +1 in the principal quantum number. useful to estimate convergence of levels
   qed:
-    with_and_without: false # useful to explicitly state the contribution of qed. if true, rci is run once with and once without QED
-    transverse: false
-    transverse_all_freqs: false
+    with_and_without: true # useful to explicitly state the contribution of qed. if true, rci is run once with and once without QED
+    transverse: true
+    transverse_all_freqs: true
     scale: "1.d-6"
-    vacpol: false
+    vacpol: true
     normal_ms: false # normal mass shift
     specific_ms: false # specific mass shift
-    se: false # self-energy
-    n_se: false # maximum n quantum number for self-energy estimation
+    se: trze # self-energy
+    n_se: 5 # maximum n quantum number for self-energy estimation
 
 # parameters for transition matrix element calculation
 trans:

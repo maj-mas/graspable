@@ -104,7 +104,7 @@ class Calculation:
                 print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
                 self.time = datetime.now()
             prev_prefix = "as_"
-            prev_suffix = str(n)
+            prev_suffix = str(n) + str(len(orbitals) - 1)
 
     def _as_ci(self):
         if self.cfg["ci"]["as_expansion"]:
