@@ -6,8 +6,8 @@ env:
   result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
     use: true # whether to use mpi
-    n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
+    n_p: 8 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: "mpirun -np 8" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/Os/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
     mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
     graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
@@ -61,7 +61,7 @@ mr_csf:
 # TODO debug options, level weigths
 as_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 3 # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the ci calculation
 # TODO debug options
@@ -75,7 +75,7 @@ ci:
     vacpol: true
     normal_ms: false # normal mass shift
     specific_ms: false # specific mass shift
-    se: trze # self-energy
+    se: true # self-energy
     n_se: 5 # maximum n quantum number for self-energy estimation
 
 # parameters for transition matrix element calculation

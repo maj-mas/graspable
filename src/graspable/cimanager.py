@@ -40,7 +40,7 @@ class CIManager:
             qed (bool, optional): Whether to include QED. Defaults to True.
         """
         grep_proc = subprocess.run(
-            f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
+            f"grep -c '*' {self.id}.{'c' if not self.graspg else 'g'}",
             shell=True,
             capture_output=True,
         )
@@ -70,7 +70,7 @@ class CIManager:
                     n = self.levels_per_j
                 else:
                     n = self.levels_per_j[i]
-                file.write(f"{n}\n")
+                file.write(f"{'1-' if n != 1 else ''}{n}\n")
 
     def _create_rci_input_csfg(self, fname: str, state: str, qed: bool = True):
         """Creates an input file for the configuration-interaction programs of graspg.
@@ -84,7 +84,7 @@ class CIManager:
             RuntimeError: Raised if there is less than 1GB available per proc.
         """
         grep_proc = subprocess.run(
-            f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
+            f"grep -c '*' {self.id}.{'c' if not self.graspg else 'g'}",
             shell=True,
             capture_output=True,
         )
@@ -137,7 +137,7 @@ class CIManager:
                     n = self.levels_per_j
                 else:
                     n = self.levels_per_j[i]
-                file.write(f"{n}\n")
+                file.write(f"{'1-' if n != 1 else ''}{n}\n")
 
     def _create_jj2lsj_input(self, fname: str, state: str):
         with open(fname, "w") as file:
@@ -202,6 +202,17 @@ class CIManager:
                 shell=True,
             )
             print(f"rci completed with exit code {rci_noqedproc.returncode}.")
+            if self.jj2lsj:
+                self._create_jj2lsj_input(
+                    f"input/jj2lsj_input_{self.id}_noqed", f"{self.id}CI_noqed"
+                )
+                jj2lsjproc = subprocess.run(
+                    [
+                        f"{self.execs['jj2lsj']} < input/jj2lsj_input_{self.id}_noqed &> log/jj2lsj_log_{self.id}_noqed"
+                    ],
+                    shell=True,
+                )
+                print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")
             print("...done, moving to regular CI.")
 
         rciproc = subprocess.run(
@@ -213,17 +224,6 @@ class CIManager:
         print(f"rci completed with exit code {rciproc.returncode}.")
 
         if self.jj2lsj:
-            if self.qed_cfg["with_and_without"]:
-                self._create_jj2lsj_input(
-                    f"input/jj2lsj_input_{self.id}_noqed", f"{self.id}CI_noqed"
-                )
-                jj2lsjproc = subprocess.run(
-                    [
-                        f"{self.execs['jj2lsj']} < input/jj2lsj_input_{self.id}_noqed &> log/jj2lsj_log_{self.id}_noqed"
-                    ],
-                    shell=True,
-                )
-                print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")
             self._create_jj2lsj_input(f"input/jj2lsj_input_{self.id}", f"{self.id}CI")
             jj2lsjproc = subprocess.run(
                 [

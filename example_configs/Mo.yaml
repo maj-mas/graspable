@@ -9,8 +9,8 @@ env:
     n_p: 2 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
     invoke_cmd: "mpirun -np 2" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/Mo_g/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
-    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
-    graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
+    mem: false # whether to use rmcdhf_mem_mpi (not present in all versions of grasp)
+    graspg: false # whether to use the CSF generator extension (must be installed at grasp_bin_path)
   clean: false
   improve: false
   keep_log: true
@@ -19,7 +19,7 @@ env:
 
 # metadata, no impact on calculations
 meta:
-  name: "calculation" # name of calculation, only used for output
+  name: "seminar" # name of calculation, only used for output
 
 # nuclear data
 nuclear:
@@ -38,7 +38,7 @@ states:
     even: ["1s2 2s1 2p2"] # list of even reference states
     odd: ["1s2 2s2 2p1", "1s2 2p3"] # list of odd reference states
   core: null
-  basis_set: "5s,5p,5d,5f,5g" # string defining the basis expansion in the form "5s,4p,3d"
+  basis_set: "3s,3p,3d" # string defining the basis expansion in the form "5s,4p,3d" TODO this should error if invalid orbitals present
   active: "*" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
