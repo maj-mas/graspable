@@ -607,6 +607,19 @@ class CSFManager:
             subprocess.run([f"cp rcsfg.out as_odd{n}.g"], shell=True)
             subprocess.run([f"cp rlabel.out as_odd{n}.l"], shell=True)
 
+    def _check_csfg_labelling_space(self):
+        orbitals = self.cfg["labelling_space"].split(",")
+        n, l = self._decompose_orbital(orbitals[0])
+        ls = [l]
+        for orbital in orbitals[1:]:
+            new_n, new_l = self._decompose_orbital(orbital)
+            if new_l in ls or new_n != n:
+                raise RuntimeError(
+                    f"Labelling space definition {self.cfg['labelling_space']} invalid. Needs to be a full set of n-shells, e.g. 3s,3p,3d or 4s,4p,4d,4f."
+                )
+            ls.append(new_l)
+            n = new_n
+
     def setup(self):
         """Generates lists of CSFs according to the config. Must be called after initialisation."""
         if not self.graspg:
@@ -614,6 +627,7 @@ class CSFManager:
             self._gen_as()
             self._split_as()
         else:
+            self._check_csfg_labelling_space()
             self._gen_mr_csfg()
             self._gen_as_csfg()
             self._split_as()
