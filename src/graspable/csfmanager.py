@@ -608,9 +608,11 @@ class CSFManager:
             subprocess.run([f"cp rlabel.out as_odd{n}.l"], shell=True)
 
     def _check_csfg_labelling_space(self):
+        """Checks if the labelling space passed is okay. Otherwise, raises exception."""
         orbitals = self.cfg["labelling_space"].split(",")
         n, l = self._decompose_orbital(orbitals[0])
         ls = [l]
+        # the labelling space should go up to some n and include all l subshells
         for orbital in orbitals[1:]:
             new_n, new_l = self._decompose_orbital(orbital)
             if new_l in ls or new_n != n:
@@ -619,6 +621,18 @@ class CSFManager:
                 )
             ls.append(new_l)
             n = new_n
+        # the principal quantum number of the labelling space needs to be at least as large as the largest principal quantum number in the multireference
+        max_n_states = 0
+        for orbitals_parity in [self.orbitals_even, self.orbitals_odd]:
+            for orbital in orbitals_parity:
+                n_state, l = self._decompose_orbital(orbital)
+                if n_state > max_n_states:
+                    max_n_states = n_state
+
+        if max_n_states > n:
+            raise RuntimeError(
+                f"Labelling space principal quantum number needs to be at least as large as the largest in the MR. Labelling space n={n}, largest n in MR = {max_n_states}."
+            )
 
     def setup(self):
         """Generates lists of CSFs according to the config. Must be called after initialisation."""
