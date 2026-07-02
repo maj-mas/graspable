@@ -118,6 +118,7 @@ class SelfConsistentField:
         grep_proc = subprocess.run(
             f"grep -c '*' rcsf{'g' if self.graspg else ''}.inp",
             shell=True,
+            executable="/bin/bash",
             capture_output=True,
         )
         nblocks = int(grep_proc.stdout) + 1
@@ -145,7 +146,10 @@ class SelfConsistentField:
             RuntimeError: Raised if rsave exits unsuccesfully.
         """
         save_proc = subprocess.run(
-            [f"{self.execs['rsave']} {state_name}"], shell=True, capture_output=True
+            [f"{self.execs['rsave']} {state_name}"],
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
         )
         if save_proc.returncode != 0:
             raise RuntimeError("Error during rsave.")
@@ -165,6 +169,7 @@ class SelfConsistentField:
                 f"{self.execs['rwfnestimate']} < input/rwfnestimate_input_{self.run_name} &> log/rwfnestimate_log_{self.run_name}"
             ],
             shell=True,
+            executable="/bin/bash",
         )
         if rwfnestimate_proc.returncode != 0:
             raise RuntimeError("Error during rwfnestimate.")
@@ -176,6 +181,7 @@ class SelfConsistentField:
                 f"{rmcdhf_exec} < input/rmcdhf_input_{self.run_name} &> log/rmcdhf_log_{self.run_name}"
             ],
             shell=True,
+            executable="/bin/bash",
         )
         print(f"rmcdhf completed with exit code {rmcdhf_proc.returncode}.")
 

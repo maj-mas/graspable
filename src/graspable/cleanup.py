@@ -11,14 +11,23 @@ class Clean:
 
         for ft in self.cfg["env"]["result_filetypes"]:
             subprocess.run(
-                [f"cp *CI*{ft}* {str(output_dir)}"], shell=True, capture_output=True
+                [f"cp *CI*{ft}* {str(output_dir)}"],
+                shell=True,
+                executable="/bin/bash",
+                capture_output=True,
             )
 
         if not self.cfg["env"]["keep_log"]:
-            subprocess.run(["rm log/*"], shell=True, capture_output=True)
+            subprocess.run(
+                ["rm log/*"], shell=True, executable="/bin/bash", capture_output=True
+            )
 
         if not self.cfg["env"]["keep_input"]:
-            subprocess.run(["rm input/*"], shell=True, capture_output=True)
+            subprocess.run(
+                ["rm input/*"], shell=True, executable="/bin/bash", capture_output=True
+            )
 
         if not self.cfg["env"]["keep_intermediate"]:
-            subprocess.run(["rm *"], shell=True, capture_output=True)
+            subprocess.run(
+                ["rm *"], shell=True, executable="/bin/bash", capture_output=True
+            )

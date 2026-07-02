@@ -42,6 +42,7 @@ class CIManager:
         grep_proc = subprocess.run(
             f"grep -c '*' {self.id}.{'c' if not self.graspg else 'g'}",
             shell=True,
+            executable="/bin/bash",
             capture_output=True,
         )
         nblocks = int(grep_proc.stdout) + 1
@@ -86,13 +87,17 @@ class CIManager:
         grep_proc = subprocess.run(
             f"grep -c '*' {self.id}.{'c' if not self.graspg else 'g'}",
             shell=True,
+            executable="/bin/bash",
             capture_output=True,
         )
         nblocks = int(grep_proc.stdout) + 1
 
         # TODO graspg assumes that all nodes are equivalent here
         grep_proc = subprocess.run(
-            "grep 'MemAvailable' /proc/meminfo", shell=True, capture_output=True
+            "grep 'MemAvailable' /proc/meminfo",
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
         )
         meminfo_split = grep_proc.stdout.split()
         mem_kb = int(meminfo_split[1])
@@ -154,15 +159,20 @@ class CIManager:
                     f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI_noqed.{'c' if not self.graspg else 'g'}"
                 ],
                 shell=True,
+                executable="/bin/bash",
                 capture_output=True,
             )
             subprocess.run(
-                [f"cp {self.id}.w {self.id}CI_noqed.w"], shell=True, capture_output=True
+                [f"cp {self.id}.w {self.id}CI_noqed.w"],
+                shell=True,
+                executable="/bin/bash",
+                capture_output=True,
             )
             if self.graspg:
                 subprocess.run(
                     [f"cp {self.id}.l {self.id}CI_noqed.l"],
                     shell=True,
+                    executable="/bin/bash",
                     capture_output=True,
                 )
             if not self.graspg:
@@ -179,14 +189,21 @@ class CIManager:
                 f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI.{'c' if not self.graspg else 'g'}"
             ],
             shell=True,
+            executable="/bin/bash",
             capture_output=True,
         )
         subprocess.run(
-            [f"cp {self.id}.w {self.id}CI.w"], shell=True, capture_output=True
+            [f"cp {self.id}.w {self.id}CI.w"],
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
         )
         if self.graspg:
             subprocess.run(
-                [f"cp {self.id}.l {self.id}CI.l"], shell=True, capture_output=True
+                [f"cp {self.id}.l {self.id}CI.l"],
+                shell=True,
+                executable="/bin/bash",
+                capture_output=True,
             )
         if not self.graspg:
             self._create_rci_input(f"input/rci_input_{self.id}", f"{self.id}CI")
@@ -200,6 +217,7 @@ class CIManager:
                     f"{self.execs['rci']} < input/rci_input_{self.id}_noqed &> log/rci_log_{self.id}_noqed"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"rci completed with exit code {rci_noqedproc.returncode}.")
             if self.jj2lsj:
@@ -211,6 +229,7 @@ class CIManager:
                         f"{self.execs['jj2lsj']} < input/jj2lsj_input_{self.id}_noqed &> log/jj2lsj_log_{self.id}_noqed"
                     ],
                     shell=True,
+                    executable="/bin/bash",
                 )
                 print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")
             print("...done, moving to regular CI.")
@@ -220,6 +239,7 @@ class CIManager:
                 f"{self.execs['rci']} < input/rci_input_{self.id} &> log/rci_log_{self.id}"
             ],
             shell=True,
+            executable="/bin/bash",
         )
         print(f"rci completed with exit code {rciproc.returncode}.")
 
@@ -230,5 +250,6 @@ class CIManager:
                     f"{self.execs['jj2lsj']} < input/jj2lsj_input_{self.id} &> log/jj2lsj_log_{self.id}"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")

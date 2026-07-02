@@ -55,9 +55,15 @@ class Transition:
 
     def run(self):
         if self.cfg["eveneven"] and self.has_even:
-            subprocess.run([f"cp {self.state_even}.w {self.state_even}.bw"], shell=True)
             subprocess.run(
-                [f"cp {self.state_even}.cm {self.state_even}.cbm"], shell=True
+                [f"cp {self.state_even}.w {self.state_even}.bw"],
+                shell=True,
+                executable="/bin/bash",
+            )
+            subprocess.run(
+                [f"cp {self.state_even}.cm {self.state_even}.cbm"],
+                shell=True,
+                executable="/bin/bash",
             )
 
             self._create_rtransition_input(
@@ -71,12 +77,21 @@ class Transition:
                     f"{self.execs['rtransition']} < input/rtransition_input_{self.state_even}_{self.state_even} &> log/rtransition_log_{self.state_even}_{self.state_even}"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"rtransition completed with exit code {rtransproc.returncode}.")
 
         if self.cfg["oddodd"] and self.has_odd:
-            subprocess.run([f"cp {self.state_odd}.w {self.state_odd}.bw"], shell=True)
-            subprocess.run([f"cp {self.state_odd}.cm {self.state_odd}.cbm"], shell=True)
+            subprocess.run(
+                [f"cp {self.state_odd}.w {self.state_odd}.bw"],
+                shell=True,
+                executable="/bin/bash",
+            )
+            subprocess.run(
+                [f"cp {self.state_odd}.cm {self.state_odd}.cbm"],
+                shell=True,
+                executable="/bin/bash",
+            )
 
             self._create_rtransition_input(
                 f"input/rtransition_input_{self.state_odd}_{self.state_odd}",
@@ -89,6 +104,7 @@ class Transition:
                     f"{self.execs['rtransition']} < input/rtransition_input_{self.state_odd}_{self.state_odd} &> log/rtransition_log_{self.state_odd}_{self.state_odd}"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"rtransition completed with exit code {rtransproc.returncode}.")
 
@@ -103,6 +119,7 @@ class Transition:
                     f"{self.execs['rbiotransform']} < input/rbiotranform_input_{self.state_even}_{self.state_odd} &> log/rbiotranform_log_{self.state_even}_{self.state_odd}"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"rbiotransform completed with exit code {rbioproc.returncode}.")
 
@@ -117,5 +134,6 @@ class Transition:
                     f"{self.execs['rtransition']} < input/rtransition_input_{self.state_even}_{self.state_odd} &> log/rtransition_log_{self.state_even}_{self.state_odd}"
                 ],
                 shell=True,
+                executable="/bin/bash",
             )
             print(f"rtransition completed with exit code {rtransproc.returncode}.")

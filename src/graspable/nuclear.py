@@ -41,5 +41,6 @@ class Nuclear:
         rnucleus_proc = subprocess.run(
             [f"{self.execs['rnucleus']} < input/rnucleus_input &> log/rnucleus_log"],
             shell=True,
+            executable="/bin/bash",
         )
         print(f"rnucleus completed with exit code {rnucleus_proc.returncode}.")

@@ -94,13 +94,16 @@ class SCFManager:
                 f"cp {self.state}.{'g' if self.graspg else 'c'} rcsf{'g' if self.graspg else ''}.inp"
             ],
             shell=True,
+            executable="/bin/bash",
         )
         if cp_proc.returncode != 0:
             raise RuntimeError(
                 f"Error copying {self.state}.{'g' if self.graspg else 'c'} to rcsf{'g' if self.graspg else ''}.inp"
             )
         if self.graspg:
-            cp_proc = subprocess.run([f"cp {self.state}.l rlabel.inp"], shell=True)
+            cp_proc = subprocess.run(
+                [f"cp {self.state}.l rlabel.inp"], shell=True, executable="/bin/bash"
+            )
             if cp_proc.returncode != 0:
                 raise RuntimeError(f"Error copying {self.state}.l to rlabel.inp")
 
@@ -110,6 +113,7 @@ class SCFManager:
         rangular_proc = subprocess.run(
             [f"{rangular_exec} &> log/rangular_log_{self.state} {self.rangular_input}"],
             shell=True,
+            executable="/bin/bash",
         )
         print(f"rangular completed with exit code {rangular_proc.returncode}.")
 
