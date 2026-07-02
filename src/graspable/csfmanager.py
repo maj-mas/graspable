@@ -24,6 +24,13 @@ class CSFManager:
         self.execs = execs
         self.graspg = cfg["env"]["mpi"]["graspg"]
 
+        self.has_even = self.cfg["multireference"]["even"] is not None
+        self.has_odd = self.cfg["multireference"]["odd"] is not None
+        if not self.has_even and not self.has_odd:
+            raise RuntimeError(
+                "At least an even or an odd state needs to be added to the multireference!"
+            )
+
         self._parse_core()
         self._parse_active()
         self._assemble_states()
@@ -194,25 +201,27 @@ class CSFManager:
 
     def _assemble_states(self):
         """Parses states from the config to grasp format and creates a list of all orbitals that appear in the configuration for both parities."""
-        self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
-        self.states_even = []
-        for state in self.cfg["multireference"]["even"]:
-            orbitals_state = self._orbitals_from_state(state)
-            for orbital in orbitals_state:
-                if orbital not in self.orbitals_even:
-                    self.orbitals_even.append(orbital)
+        if self.has_even:
+            self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
+            self.states_even = []
+            for state in self.cfg["multireference"]["even"]:
+                orbitals_state = self._orbitals_from_state(state)
+                for orbital in orbitals_state:
+                    if orbital not in self.orbitals_even:
+                        self.orbitals_even.append(orbital)
 
-            self.states_even.append(self._assemble_state(state))
+                self.states_even.append(self._assemble_state(state))
 
-        self.orbitals_odd = deepcopy(self.core)  # also get a list of all orbitals
-        self.states_odd = []
-        for state in self.cfg["multireference"]["odd"]:
-            orbitals_state = self._orbitals_from_state(state)
-            for orbital in orbitals_state:
-                if orbital not in self.orbitals_odd:
-                    self.orbitals_odd.append(orbital)
+        if self.has_odd:
+            self.orbitals_odd = deepcopy(self.core)  # also get a list of all orbitals
+            self.states_odd = []
+            for state in self.cfg["multireference"]["odd"]:
+                orbitals_state = self._orbitals_from_state(state)
+                for orbital in orbitals_state:
+                    if orbital not in self.orbitals_odd:
+                        self.orbitals_odd.append(orbital)
 
-            self.states_odd.append(self._assemble_state(state))
+                self.states_odd.append(self._assemble_state(state))
 
     def _create_rcsfgenerate_input(
         self,
@@ -271,9 +280,7 @@ class CSFManager:
             file.write("0\n")  # no pre-def core
             file.writelines(state + "\n" for state in states)  # states
             file.write("\n")  # end states
-            file.write(
-                self.cfg["labelling_space"] + "\n"
-            )  # as basis set # chg mr_basis BIG TODO TODO graspg needs user specified labelling space!
+            file.write(self.cfg["labelling_space"] + "\n")  # labelling space
             file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
             file.write("0\n")  # # of excitations
             file.write("y\n")  # end
@@ -298,10 +305,12 @@ class CSFManager:
             tuple(int, int): (n_max_configs, n_max_basis)
         """
         highest_n_state = 0
-        for states_parity in [
-            self.cfg["multireference"]["even"],
-            self.cfg["multireference"]["odd"],
-        ]:
+        states_lookup = []
+        if self.has_even:
+            states_lookup.append(self.cfg["multireference"]["even"])
+        if self.has_odd:
+            states_lookup.append(self.cfg["multireference"]["odd"])
+        for states_parity in states_lookup:
             for state in states_parity:
                 for shell in state.split(" "):
                     n, l, occ = self._decompose_shell(shell)
@@ -347,14 +356,18 @@ class CSFManager:
         basis = ""
         for oam_symbol in list(self.oam_symbols.keys()):
             highest_n = 0
-            for orbital in self.orbitals_even:
-                if oam_symbol in orbital:
-                    n, l = self._decompose_orbital(orbital)
-                    highest_n = n
-            for orbital in self.orbitals_odd:
-                if oam_symbol in orbital:
-                    n, l = self._decompose_orbital(orbital)
-                    highest_n = n
+            if self.has_even:
+                for orbital in self.orbitals_even:
+                    if oam_symbol in orbital:
+                        n, l = self._decompose_orbital(orbital)
+                        if n > highest_n:
+                            highest_n = n
+            if self.has_odd:
+                for orbital in self.orbitals_odd:
+                    if oam_symbol in orbital:
+                        n, l = self._decompose_orbital(orbital)
+                        if n > highest_n:
+                            highest_n = n
             if highest_n != 0:
                 basis += f"{highest_n}{oam_symbol},"
 
@@ -366,188 +379,204 @@ class CSFManager:
     def _gen_mr(self):
         """Generates CSFs for the multireference without excitations for both parities."""
         mr_basis = self._mr_basis()
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_mr_even",
-            self.states_even,
-            0,
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-            manual_basis=mr_basis,
-        )
-        rcsfgenerate_proc_mr_even = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_even &> log/rcsfgenerate_log_mr_even"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
-        )
-        subprocess.run(["cp rcsf.out mr_even.c"], shell=True)
 
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_mr_odd",
-            self.states_odd,
-            0,
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-            manual_basis=mr_basis,
-        )
-        rcsfgenerate_proc_mr_odd = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_odd &> log/rcsfgenerate_log_mr_odd"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
-        )
-        subprocess.run(["cp rcsf.out mr_odd.c"], shell=True)
+        if self.has_even:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_mr_even",
+                self.states_even,
+                0,
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=mr_basis,
+            )
+            rcsfgenerate_proc_mr_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_even &> log/rcsfgenerate_log_mr_even"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
+            )
+            subprocess.run(["cp rcsf.out mr_even.c"], shell=True)
+
+        if self.has_odd:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_mr_odd",
+                self.states_odd,
+                0,
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=mr_basis,
+            )
+            rcsfgenerate_proc_mr_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_odd &> log/rcsfgenerate_log_mr_odd"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
+            )
+            subprocess.run(["cp rcsf.out mr_odd.c"], shell=True)
 
     def _gen_mr_csfg(self):
         """Generates CSFs for the multireference without excitations for both parities, using graspg."""
         mr_basis = self._mr_basis()
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_mr_even",
-            self.states_even,
-            0,
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-            manual_basis=mr_basis,
-        )
-        rcsfgenerate_proc_mr_even = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_even &> log/rcsfgenerate_log_mr_even"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
-        )
-        subprocess.run(["cp rcsfg.out mr_even.g"], shell=True)
-        subprocess.run(["cp rlabel.out mr_even.l"], shell=True)
 
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_mr_odd",
-            self.states_odd,
-            0,
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-            manual_basis=mr_basis,
-        )
-        rcsfgenerate_proc_mr_odd = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_odd &> log/rcsfgenerate_log_mr_odd"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
-        )
-        subprocess.run(["cp rcsfg.out mr_odd.g"], shell=True)
-        subprocess.run(["cp rlabel.out mr_odd.l"], shell=True)
+        if self.has_even:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_mr_even",
+                self.states_even,
+                0,
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=mr_basis,
+            )
+            rcsfgenerate_proc_mr_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_even &> log/rcsfgenerate_log_mr_even"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
+            )
+            subprocess.run(["cp rcsfg.out mr_even.g"], shell=True)
+            subprocess.run(["cp rlabel.out mr_even.l"], shell=True)
+
+        if self.has_odd:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_mr_odd",
+                self.states_odd,
+                0,
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+                manual_basis=mr_basis,
+            )
+            rcsfgenerate_proc_mr_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_mr_odd &> log/rcsfgenerate_log_mr_odd"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
+            )
+            subprocess.run(["cp rcsfg.out mr_odd.g"], shell=True)
+            subprocess.run(["cp rlabel.out mr_odd.l"], shell=True)
 
     def _gen_as(self):
         """Generates lists of CSFs for the active space for both parities."""
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_as_even",
-            self.states_even,
-            self.cfg["excitations"],
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-        )
-        rcsfgenerate_proc_as_even = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even &> log/rcsfgenerate_log_as_even"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
-        )
-        subprocess.run(["cp rcsf.out as_even.c"], shell=True)
+        if self.has_even:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_as_even",
+                self.states_even,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+            )
+            rcsfgenerate_proc_as_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even &> log/rcsfgenerate_log_as_even"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
+            )
+            subprocess.run(["cp rcsf.out as_even.c"], shell=True)
 
-        self._create_rcsfgenerate_input(
-            "rcsfgenerate_input_as_odd",
-            self.states_odd,
-            self.cfg["excitations"],
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-        )
-        rcsfgenerate_proc_as_odd = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd &> log/rcsfgenerate_log_as_odd"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
-        )
-        subprocess.run(["cp rcsf.out as_odd.c"], shell=True)
+        if self.has_odd:
+            self._create_rcsfgenerate_input(
+                "rcsfgenerate_input_as_odd",
+                self.states_odd,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+            )
+            rcsfgenerate_proc_as_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd &> log/rcsfgenerate_log_as_odd"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
+            )
+            subprocess.run(["cp rcsf.out as_odd.c"], shell=True)
 
     def _gen_as_csfg(self):
         """Generates lists of CSFs for the active space for both parities, using graspg."""
-        self._create_rcsfgenerate_input_graspg(
-            "rcsfgenerate_input_as_even",
-            self.states_even,
-            self.cfg["excitations"],
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-        )
-        rcsfgenerate_proc_as_even = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even &> log/rcsfgenerate_log_as_even"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
-        )
-        subprocess.run(["cp rcsfg.out as_even.g"], shell=True)
-        subprocess.run(["cp rlabel.out as_even.l"], shell=True)
+        if self.has_even:
+            self._create_rcsfgenerate_input_graspg(
+                "rcsfgenerate_input_as_even",
+                self.states_even,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+            )
+            rcsfgenerate_proc_as_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even &> log/rcsfgenerate_log_as_even"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
+            )
+            subprocess.run(["cp rcsfg.out as_even.g"], shell=True)
+            subprocess.run(["cp rlabel.out as_even.l"], shell=True)
 
-        self._create_rcsfgenerate_input_graspg(
-            "rcsfgenerate_input_as_odd",
-            self.states_odd,
-            self.cfg["excitations"],
-            self.cfg["2j_min"],
-            self.cfg["2j_max"],
-        )
-        rcsfgenerate_proc_as_odd = subprocess.run(
-            [
-                f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd &> log/rcsfgenerate_log_as_odd"
-            ],
-            shell=True,
-        )
-        print(
-            f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
-        )
-        subprocess.run(["cp rcsfg.out as_odd.g"], shell=True)
-        subprocess.run(["cp rlabel.out as_odd.l"], shell=True)
+        if self.has_odd:
+            self._create_rcsfgenerate_input_graspg(
+                "rcsfgenerate_input_as_odd",
+                self.states_odd,
+                self.cfg["excitations"],
+                self.cfg["2j_min"],
+                self.cfg["2j_max"],
+            )
+            rcsfgenerate_proc_as_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd &> log/rcsfgenerate_log_as_odd"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
+            )
+            subprocess.run(["cp rcsfg.out as_odd.g"], shell=True)
+            subprocess.run(["cp rlabel.out as_odd.l"], shell=True)
 
     def _split_as(self):
         """Splits the list of active space CSFs by principal quantum number for both parities."""
-        if self.graspg:
-            subprocess.run(["cp as_even.l rlabel.inp"], shell=True)
-        self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
-        rcsfsplit_proc_even = subprocess.run(
-            [
-                f"{self.execs['rcsfsplit']} < input/rcsfsplit_input_even &> log/rcsfsplit_log_even"
-            ],
-            shell=True,
-        )
-        print(f"rcsfsplit completed with exit code {rcsfsplit_proc_even.returncode}.")
+        if self.has_even:
+            if self.graspg:
+                subprocess.run(["cp as_even.l rlabel.inp"], shell=True)
+            self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
+            rcsfsplit_proc_even = subprocess.run(
+                [
+                    f"{self.execs['rcsfsplit']} < input/rcsfsplit_input_even &> log/rcsfsplit_log_even"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfsplit completed with exit code {rcsfsplit_proc_even.returncode}."
+            )
 
-        if self.graspg:
-            subprocess.run(["cp as_odd.l rlabel.inp"], shell=True)
-        self._create_rcsfsplit_input("rcsfsplit_input_odd", "as_odd")
-        rcsfsplit_proc_odd = subprocess.run(
-            [
-                f"{self.execs['rcsfsplit']} < input/rcsfsplit_input_odd &> log/rcsfsplit_log_odd"
-            ],
-            shell=True,
-        )
-        print(f"rcsfsplit completed with exit code {rcsfsplit_proc_odd.returncode}.")
+        if self.has_odd:
+            if self.graspg:
+                subprocess.run(["cp as_odd.l rlabel.inp"], shell=True)
+            self._create_rcsfsplit_input("rcsfsplit_input_odd", "as_odd")
+            rcsfsplit_proc_odd = subprocess.run(
+                [
+                    f"{self.execs['rcsfsplit']} < input/rcsfsplit_input_odd &> log/rcsfsplit_log_odd"
+                ],
+                shell=True,
+            )
+            print(
+                f"rcsfsplit completed with exit code {rcsfsplit_proc_odd.returncode}."
+            )
 
     def _split_as_csfg(self):
         """Splits the list of active space CSFs by principal quantum number for both parities. Since rcsfsplit is not implemented for the graspg format, we achieve the same result using repeated calls to rcsfggenerate_csfg, resulting in somewhat of a longer runtime."""
@@ -567,45 +596,47 @@ class CSFManager:
                 else:
                     basis += orbital
 
-            self._create_rcsfgenerate_input_graspg(
-                f"rcsfgenerate_input_as_even_split{n}",
-                self.states_even,
-                self.cfg["excitations"],
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
-                manual_basis=basis,
-            )
-            rcsfgenerate_proc_split_even = subprocess.run(
-                [
-                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even_split{n} &> log/rcsfgenerate_log_as_even_split{n}"
-                ],
-                shell=True,
-            )
-            print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_even.returncode}."
-            )
-            subprocess.run([f"cp rcsfg.out as_even{n}.g"], shell=True)
-            subprocess.run([f"cp rlabel.out as_even{n}.l"], shell=True)
+            if self.has_even:
+                self._create_rcsfgenerate_input_graspg(
+                    f"rcsfgenerate_input_as_even_split{n}",
+                    self.states_even,
+                    self.cfg["excitations"],
+                    self.cfg["2j_min"],
+                    self.cfg["2j_max"],
+                    manual_basis=basis,
+                )
+                rcsfgenerate_proc_split_even = subprocess.run(
+                    [
+                        f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_even_split{n} &> log/rcsfgenerate_log_as_even_split{n}"
+                    ],
+                    shell=True,
+                )
+                print(
+                    f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_even.returncode}."
+                )
+                subprocess.run([f"cp rcsfg.out as_even{n}.g"], shell=True)
+                subprocess.run([f"cp rlabel.out as_even{n}.l"], shell=True)
 
-            self._create_rcsfgenerate_input_graspg(
-                f"rcsfgenerate_input_as_odd_split{n}",
-                self.states_odd,
-                self.cfg["excitations"],
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
-                manual_basis=basis,
-            )
-            rcsfgenerate_proc_split_odd = subprocess.run(
-                [
-                    f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd_split{n} &> log/rcsfgenerate_log_as_odd_split{n}"
-                ],
-                shell=True,
-            )
-            print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_odd.returncode}."
-            )
-            subprocess.run([f"cp rcsfg.out as_odd{n}.g"], shell=True)
-            subprocess.run([f"cp rlabel.out as_odd{n}.l"], shell=True)
+            if self.has_odd:
+                self._create_rcsfgenerate_input_graspg(
+                    f"rcsfgenerate_input_as_odd_split{n}",
+                    self.states_odd,
+                    self.cfg["excitations"],
+                    self.cfg["2j_min"],
+                    self.cfg["2j_max"],
+                    manual_basis=basis,
+                )
+                rcsfgenerate_proc_split_odd = subprocess.run(
+                    [
+                        f"{self.execs['rcsfgenerate']} < input/rcsfgenerate_input_as_odd_split{n} &> log/rcsfgenerate_log_as_odd_split{n}"
+                    ],
+                    shell=True,
+                )
+                print(
+                    f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_odd.returncode}."
+                )
+                subprocess.run([f"cp rcsfg.out as_odd{n}.g"], shell=True)
+                subprocess.run([f"cp rlabel.out as_odd{n}.l"], shell=True)
 
     def _check_csfg_labelling_space(self):
         """Checks if the labelling space passed is okay. Otherwise, raises exception."""
@@ -623,7 +654,12 @@ class CSFManager:
             n = new_n
         # the principal quantum number of the labelling space needs to be at least as large as the largest principal quantum number in the multireference
         max_n_states = 0
-        for orbitals_parity in [self.orbitals_even, self.orbitals_odd]:
+        orbitals_lookup = []
+        if self.has_even:
+            orbitals_lookup.append(self.orbitals_even)
+        if self.has_odd:
+            orbitals_lookup.append(self.orbitals_odd)
+        for orbitals_parity in orbitals_lookup:
             for orbital in orbitals_parity:
                 n_state, l = self._decompose_orbital(orbital)
                 if n_state > max_n_states:

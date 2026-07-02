@@ -49,10 +49,19 @@ class Calculation:
         print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
         self.time = datetime.now()
 
-    def _mr_scf(self):  # TODO more graceful behaviour if no even or odd state
-        parities = ["even", "odd"]
-        states = ["mr_even", "mr_odd"]
-        orbitals_l = [self.csfman.orbitals_even, self.csfman.orbitals_odd]
+    def _mr_scf(self):
+        parities = []
+        states = []
+        orbitals_l = []
+        if self.csfman.has_even:
+            parities.append("even")
+            states.append("mr_even")
+            orbitals_l.append(self.csfman.orbitals_even)
+        if self.csfman.has_odd:
+            parities.append("odd")
+            states.append("mr_odd")
+            orbitals_l.append(self.csfman.orbitals_odd)
+
         for parity, state, orbitals in zip(parities, states, orbitals_l, strict=True):
             print(f"Performing SCF procedure for {parity} multireference...")
             self.csfmr = SCFManager(
@@ -78,8 +87,15 @@ class Calculation:
 
         prev_prefix = "mr_"
         prev_suffix = "_all"
+
+        parities = []
+        if self.csfman.has_even:
+            parities.append("even")
+        if self.csfman.has_odd:
+            parities.append("odd")
+
         for n in range(n_min, n_max + 1):
-            for parity in ["even", "odd"]:
+            for parity in parities:
                 print(
                     f"Performing active space SCF procedure up to n={n} for {parity} parity..."
                 )
@@ -114,8 +130,14 @@ class Calculation:
             n_min = self.csfman.n_max
             n_max = n_min + 1
 
+        parities = []
+        if self.csfman.has_even:
+            parities.append("even")
+        if self.csfman.has_odd:
+            parities.append("odd")
+
         for n in range(n_min, n_max + 1):
-            for parity in ["even", "odd"]:
+            for parity in parities:
                 print(f"Performing CI calculation up to n={n} for {parity} parity...")
                 orbitals = self.csfman.active_orbitals_given_n(n)
                 state = f"as_{parity}{n}{len(orbitals) + 1 - 1}"
