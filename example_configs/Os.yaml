@@ -44,6 +44,7 @@ states:
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: 0 # minimum value of 2J for generated CSFs
   2j_max: 12 # maximum value of 2J for generated CSFs
+  labelling_space: "5s,5p,5d,5f,5g" # must be set appropriately for use with graspg
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options

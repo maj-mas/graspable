@@ -266,13 +266,14 @@ class CSFManager:
             j2_max (int): Maximum value of 2J for states to be generated.
             manual_basis (str | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. Defaults to None.
         """
-        mr_basis = self._mr_basis()
         with open(f"input/{fname}", "w") as file:
             # for graspg: mr only first
             file.write("0\n")  # no pre-def core
             file.writelines(state + "\n" for state in states)  # states
             file.write("\n")  # end states
-            file.write(mr_basis + "\n")  # as basis set
+            file.write(
+                self.cfg["labelling_space"] + "\n"
+            )  # as basis set # chg mr_basis BIG TODO TODO graspg needs user specified labelling space!
             file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
             file.write("0\n")  # # of excitations
             file.write("y\n")  # end

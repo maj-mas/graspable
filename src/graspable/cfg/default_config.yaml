@@ -49,6 +49,7 @@ states:
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: null # minimum value of 2J for generated CSFs
   2j_max: null # maximum value of 2J for generated CSFs
+  labelling_space: null # must be set appropriately for use with graspg
 
 # parameters for the determination of angular coefficients
 angular:

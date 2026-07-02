@@ -48,6 +48,8 @@ class Environment:
             raise RuntimeError("graspg and mem options are incompatible.")
         if self.cfg["mpi"]["graspg"] and not self.cfg["mpi"]["use"]:
             raise RuntimeError("graspg needs mpi.")
+        if self.cfg["mpi"]["graspg"] and cfg["states"]["labelling_space"] is None:
+            raise RuntimeError("graspg needs a defined labelling space!")
 
     def setup(self) -> dict:  # TODO test case if dirs correctly created
         """Creates the necessary directories and files for the calculation.
