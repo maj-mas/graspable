@@ -58,13 +58,16 @@ class SCFManager:
             raise RuntimeError(f"Invalid type {type} passed to SCFManager.")
         if type == "mr":
             self.orbitals_spectroscopic = "*"  # mr states need to be good
+            self.maxit = self.cfg["mr_csf"]["maxit"]
+            self.restart_on_maxit_reached = False
+            self.dampen_factor = self.cfg["mr_csf"]["dampen_factor"]
         if type == "as":
             self.orbitals_spectroscopic = ""
-            # spectros = []
-            # for orbital in self.orbitals:
-            #     if orbital in self.active_orbitals:
-            #         spectros.append(orbital)
-            # self.orbitals_spectroscopic = " ".join(spectros)
+            self.maxit = self.cfg["as_csf"]["maxit"]
+            self.restart_on_maxit_reached = self.cfg["as_csf"][
+                "restart_on_maxit_reached"
+            ]
+            self.dampen_factor = self.cfg["as_csf"]["dampen_factor"]
 
         self.id = id
         self.mpi = mpi
@@ -132,7 +135,10 @@ class SCFManager:
             mpi=self.mpi,
             init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
             init_run=self.init_run,
+            n_iterations=self.maxit,
             graspg=self.graspg,
+            second_try_on_limit_reached=self.restart_on_maxit_reached,
+            dampen_factor=self.dampen_factor,
         )
         retcode = scf.run()
         if retcode == 0:
@@ -157,7 +163,10 @@ class SCFManager:
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=self.id + str(i - 1) if successful_run_exists else None,
+                n_iterations=self.maxit,
                 graspg=self.graspg,
+                second_try_on_limit_reached=self.restart_on_maxit_reached,
+                dampen_factor=self.dampen_factor,
             )
             retcode = scf.run()
             if retcode == 0:
@@ -186,7 +195,10 @@ class SCFManager:
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=self.id + str(i - 1) if successful_run_exists else None,
+                n_iterations=self.maxit,
                 graspg=self.graspg,
+                second_try_on_limit_reached=self.restart_on_maxit_reached,
+                dampen_factor=self.dampen_factor,
             )
             retcode = scf.run()
             if retcode == 0:

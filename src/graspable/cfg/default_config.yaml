@@ -68,12 +68,18 @@ orbital_init:
 mr_csf:
   optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
   levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  max_orbital_combos: 100
+  maxit: 100
+  dampen_factor: null
 
 # parameters for the scf procedure for the active space
 # TODO debug options, level weigths
 as_csf:
   optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
   levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  maxit: 100
+  restart_on_maxit_reached: false
+  dampen_factor: null
 
 # parameters for the ci calculation
 # TODO debug options

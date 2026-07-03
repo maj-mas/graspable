@@ -17,6 +17,8 @@ class SelfConsistentField:
         custom_Z: float | None = None,
         n_iterations: int = 100,
         graspg: bool = False,
+        second_try_on_limit_reached: bool = False,
+        dampen_factor: float | None = None,
     ) -> None:
         """Constructs a SelfConsistentField object.
 
@@ -32,6 +34,7 @@ class SelfConsistentField:
             custom_Z (float | None, optional): Z offset for custom Z orbital initialisation. Defaults to None.
             n_iterations (int, optional): Max number of SCF steps. Defaults to 100.
             graspg (bool, optional): Whether to use graspg. Defaults to False.
+            second_try_on_limit_reached (bool, optional): Can be used to restart a calculation if it reaches the maximum number of iterations. Defaults to False.
         """
         self.execs = execs
         self.orbitals_optimise = self._expand_orbitals_relativistic(orbitals_optimise)
@@ -44,6 +47,12 @@ class SelfConsistentField:
         self.custom_Z = custom_Z
         self.n_iterations = n_iterations
         self.graspg = graspg
+        self.second_try_on_limit_reached = second_try_on_limit_reached
+        self.dampen_factor = dampen_factor
+        if self.dampen_factor is not None:  # TODO unflexible
+            self.non_default = True
+        else:
+            self.non_default = False
 
     def _expand_orbitals_relativistic(self, orbitals: str) -> str:
         """Converts non-relativistiv orbitals as e.g. 2p -> 2p* such that the + and - orbitals are included in grasp.
@@ -74,7 +83,7 @@ class SelfConsistentField:
         return relativistic_orbitals
 
     # TODO support non default options?
-    def _create_rwfnestimate_input(self, fname: str):
+    def _create_rwfnestimate_input(self, fname: str, alt_init_run: str | None = None):
         """Creates an input file for the wave function estimation programs of grasp(g).
 
         Args:
@@ -89,6 +98,12 @@ class SelfConsistentField:
             if self.init_run is not None:
                 file.write("1\n")
                 file.write(self.init_run + ".w\n")
+                file.write("*\n")
+                file.write(f"{self.init_type}\n")
+                file.write("*\n")
+            elif alt_init_run is not None:
+                file.write("1\n")
+                file.write(alt_init_run + ".w\n")
                 file.write("*\n")
                 file.write(f"{self.init_type}\n")
                 file.write("*\n")
@@ -124,7 +139,14 @@ class SelfConsistentField:
         nblocks = int(grep_proc.stdout) + 1
 
         with open(fname, "w") as file:
-            file.write("y\n")  # TODO non default options
+            print(self.non_default, self.dampen_factor)
+            if self.non_default:
+                file.write("n\n")  # non default options
+                file.write("n\n")  # no debug output for now
+                file.write("n\n")  # don't change grid or c for now
+                file.write("n\n")  # don't change default accuracy for now
+            else:
+                file.write("y\n")  # no non default options
             for i in range(nblocks):
                 if isinstance(self.levels_per_j, int):
                     n = self.levels_per_j
@@ -135,6 +157,25 @@ class SelfConsistentField:
             file.write(f"{self.orbitals_optimise}\n")
             file.write(f"{self.orbitals_spectroscopic}\n")
             file.write(f"{self.n_iterations}\n")
+            if self.non_default:
+                file.write("y\n")
+                file.write("n\n")  # don't change oscillation treatment for now
+                file.write("n\n")  # don't integration methods for now
+                file.write(
+                    "n\n"
+                )  # don't change sign of wavefunctions at first oscillation for now
+                file.write("y\n")  # accel params!
+                file.write("n\n")  # all get the same for now
+                file.write(f"{self.dampen_factor}\n")
+                file.write("y\n")  # also dampening for evecs for now
+                file.write("n\n")  # all get the same for now
+                file.write(f"{self.dampen_factor}\n")
+                file.write("n\n")  # don't change improv behaviour for now
+                file.write("n\n")  # don't change maximum solution attempts for now
+                file.write("n\n")  # don't change orthogonalisation for now
+                file.write(
+                    "2\n"
+                )  # orthonormalisation order must be specified (self-consistency connected)
 
     def _save(self, state_name: str):
         """Saves the run last performed to disk.
@@ -154,8 +195,30 @@ class SelfConsistentField:
         if save_proc.returncode != 0:
             raise RuntimeError("Error during rsave.")
 
-    def run(self) -> int:
-        """Performs single SCF calculation. Must be called after initialisation.
+    def _check_maxit_reached(self) -> bool:
+        """Used to check if maximum number of iterations was reached.
+
+        Returns:
+            bool: True if reached, False else.
+        """
+        # count occurences of "Iteration number" in rmcdhf output
+        grep_proc = subprocess.run(
+            f'grep -c "Iteration number" log/rmcdhf_log_{self.run_name}',
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
+        )
+        n_actual_it = int(
+            grep_proc.stdout
+        )  # edge case: convergence in last step. but I deem this not so important.
+        print(f"DEBUG: {n_actual_it}, {self.n_iterations}")
+
+        if n_actual_it >= self.n_iterations:
+            return True
+        return False
+
+    def _one_run(self, alt_init_run: str | None = None) -> int:
+        """Performs single SCF calculation.
 
         Raises:
             RuntimeError: Raised if rwfnestimate crashes.
@@ -163,7 +226,12 @@ class SelfConsistentField:
         Returns:
             int: rmcdhf return code.
         """
-        self._create_rwfnestimate_input(f"input/rwfnestimate_input_{self.run_name}")
+        if alt_init_run is None:
+            self._create_rwfnestimate_input(f"input/rwfnestimate_input_{self.run_name}")
+        else:
+            self._create_rwfnestimate_input(
+                f"input/rwfnestimate_input_{self.run_name}", alt_init_run=alt_init_run
+            )
         rwfnestimate_proc = subprocess.run(
             [
                 f"{self.execs['rwfnestimate']} < input/rwfnestimate_input_{self.run_name} &> log/rwfnestimate_log_{self.run_name}"
@@ -188,3 +256,28 @@ class SelfConsistentField:
         self._save(self.run_name)
 
         return rmcdhf_proc.returncode
+
+    def run(self) -> int:
+        """Must be called after initialisation. Performs one or, if maxit is reached and the option is enabled, two SCF runs.
+
+        Returns:
+            int: last rmcdhf return code
+        """
+        retcode = self._one_run()
+
+        if self._check_maxit_reached():
+            print(
+                f"WARNING: Maximum number of iterations ({self.n_iterations}) reached during SCF procedure."
+            )
+
+            if retcode == 0 and self.second_try_on_limit_reached:
+                print("Performing one additional try as configured...")
+
+                retcode = self._one_run(alt_init_run=self.run_name)
+
+                if self._check_maxit_reached():
+                    print(
+                        f"WARNING: Maximum number of iterations ({self.n_iterations}) reached AGAIN during SCF procedure."
+                    )
+
+        return retcode

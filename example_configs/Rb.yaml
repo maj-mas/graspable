@@ -44,7 +44,7 @@ states:
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: 1 # minimum value of 2J for generated CSFs
   2j_max: 3 # maximum value of 2J for generated CSFs
-  #labelling_space: "5s,5p,5d,5f,5g" # must be set appropriately for use with graspg
+  labelling_space: "5s,5p,5d,5f,5g" # must be set appropriately for use with graspg
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options
@@ -62,7 +62,10 @@ mr_csf:
 # TODO debug options, level weigths
 as_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 3 # if int, applies to all J in range, otherwise list of number of states
+  maxit: 300
+  restart_on_maxit_reached: true
+  dampen_factor: -0.5
 
 # parameters for the ci calculation
 # TODO debug options

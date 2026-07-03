@@ -76,6 +76,7 @@ class Calculation:
                 if self.cfg["env"]["mpi"]["graspg"]
                 else False,  # g only has mpi
                 final_star_run=True,
+                run_limit=self.cfg["mr_csf"]["max_orbital_combos"],
             )
             self.csfmr.run()
             print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
