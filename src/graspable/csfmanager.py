@@ -13,9 +13,17 @@ class CSFManager:
         "f": 3,
         "g": 4,
         "h": 5,
-        "i": 6,
-        "j": 7,
-        "k": 8,
+        "j": 6,
+        "k": 7,
+        "l": 8,
+        "m": 9,
+        "n": 10,
+        "o": 11,
+        "q": 12,
+        "r": 13,
+        "t": 14,
+        "u": 15,
+        "v": 16,
     }
     oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys(), strict=True))
 
@@ -317,8 +325,9 @@ class CSFManager:
                     if n > highest_n_state:
                         highest_n_state = n
 
-        highest_n_basis = int(
-            self.cfg["basis_set"][0]
+        s_orbital_basis_set = self.cfg["basis_set"].split(",")[0]
+        highest_n_basis, s = self._decompose_orbital(
+            s_orbital_basis_set
         )  # TODO assumes s orbital always has the highest n in basis set
         if highest_n_basis <= highest_n_state:
             raise RuntimeError("Active space too small to create sensible split.")
@@ -480,15 +489,113 @@ class CSFManager:
                 ["cp rlabel.out mr_odd.l"], shell=True, executable="/bin/bash"
             )
 
+    def _check_single_orbital_mr(self, parity: str) -> bool:
+        """Returns True if the mr for the given parity is of single-orbital type (e.g. only contains "5s1"). Returns False, otherwise.
+
+        Args:
+            parity (str): "even" or "odd"
+
+        Raises:
+            RuntimeError: Raised if parity does not match "even" or "odd".
+
+        Returns:
+            bool: see above
+        """
+        if parity != "even" and parity != "odd":
+            raise RuntimeError(
+                f"Invalid parity {parity} passed to _check_single_orbital_mr."
+            )
+
+        if parity == "even":
+            if len(self.cfg["multireference"]["even"]) == 1:
+                if len(self.cfg["multireference"]["even"][0].split(" ")) == 1:
+                    return True
+
+        if parity == "odd":
+            if len(self.cfg["multireference"]["odd"]) == 1:
+                if len(self.cfg["multireference"]["odd"][0].split(" ")) == 1:
+                    return True
+
+        return False
+
+    def _rm_other_parity_from_as(self, basis: str, keep_parity: str) -> str:
+        """Removes a selected parity from a basis set defining string. I.e., if basis is "6s,6p,5d" and keep_parity is "even", "6s,5d" is returned.
+
+        Args:
+            basis (str): Comma-delimited basis (non-relativistic), e.g. "6s,6p,5d"
+            keep_parity (str): "even" or "odd"
+
+        Raises:
+            RuntimeError: Raised if parity does not match "even" or "odd".
+
+        Returns:
+            str: Basis with opposite parity removed.
+        """
+        if keep_parity != "even" and keep_parity != "odd":
+            raise RuntimeError(
+                f"Invalid parity {keep_parity} passed to _rm_other_parity_from_as."
+            )
+        basis_orbitals = basis.split(",")
+        parity_matching_orbitals = []
+        for orbital in basis_orbitals:
+            n, l = self._decompose_orbital(orbital)
+            if keep_parity == "odd" and l % 2 == 0:
+                continue
+            elif keep_parity == "even" and l % 2 == 1:
+                continue
+            parity_matching_orbitals.append(orbital)
+
+        parity_matching_basis = ",".join(parity_matching_orbitals)
+
+        return parity_matching_basis
+
+    def _rm_other_parity_from_as_list(
+        self, basis: list[str], keep_parity: str
+    ) -> list[str]:
+        """Removes a selected parity from a basis set defining string. i.e., if basis is ["6s","6p","5d"] and keep_parity is "even", ["6s","5d"] is returned.
+
+        Args:
+            basis (list[str]): Comma-delimited basis (non-relativistic), e.g. "6s,6p,5d"
+            keep_parity (str): "even" or "odd"
+
+        Raises:
+            RuntimeError: Raised if parity does not match "even" or "odd".
+
+        Returns:
+            list[str]: Basis with opposite parity removed.
+        """
+        if keep_parity != "even" and keep_parity != "odd":
+            raise RuntimeError(
+                f"Invalid parity {keep_parity} passed to _rm_other_parity_from_as_list."
+            )
+
+        parity_matching_orbitals = []
+        for orbital in basis:
+            n, l = self._decompose_orbital(orbital)
+            if keep_parity == "odd" and l % 2 == 0:
+                continue
+            elif keep_parity == "even" and l % 2 == 1:
+                continue
+            parity_matching_orbitals.append(orbital)
+
+        return parity_matching_orbitals
+
     def _gen_as(self):
         """Generates lists of CSFs for the active space for both parities."""
+        # TODO use manual basis option to pass parity adequate basis if the mr only contains a single orbital
+        # do the heavy lifting in a subroutine
         if self.has_even:
+            basis = self.cfg["basis_set"]
+            if self._check_single_orbital_mr("even"):
+                basis = self._rm_other_parity_from_as(basis, "even")
+
             self._create_rcsfgenerate_input(
                 "rcsfgenerate_input_as_even",
                 self.states_even,
                 self.cfg["excitations"],
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
+                manual_basis=basis,
             )
             rcsfgenerate_proc_as_even = subprocess.run(
                 [
@@ -505,12 +612,17 @@ class CSFManager:
             )
 
         if self.has_odd:
+            basis = self.cfg["basis_set"]
+            if self._check_single_orbital_mr("odd"):
+                basis = self._rm_other_parity_from_as(basis, "odd")
+
             self._create_rcsfgenerate_input(
                 "rcsfgenerate_input_as_odd",
                 self.states_odd,
                 self.cfg["excitations"],
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
+                manual_basis=basis,
             )
             rcsfgenerate_proc_as_odd = subprocess.run(
                 [
@@ -527,12 +639,17 @@ class CSFManager:
     def _gen_as_csfg(self):
         """Generates lists of CSFs for the active space for both parities, using graspg."""
         if self.has_even:
+            basis = self.cfg["basis_set"]
+            if self._check_single_orbital_mr("even"):
+                basis = self._rm_other_parity_from_as(basis, "even")
+
             self._create_rcsfgenerate_input_graspg(
                 "rcsfgenerate_input_as_even",
                 self.states_even,
                 self.cfg["excitations"],
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
+                manual_basis=basis,
             )
             rcsfgenerate_proc_as_even = subprocess.run(
                 [
@@ -552,12 +669,17 @@ class CSFManager:
             )
 
         if self.has_odd:
+            basis = self.cfg["basis_set"]
+            if self._check_single_orbital_mr("odd"):
+                basis = self._rm_other_parity_from_as(basis, "odd")
+
             self._create_rcsfgenerate_input_graspg(
                 "rcsfgenerate_input_as_odd",
                 self.states_odd,
                 self.cfg["excitations"],
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
+                manual_basis=basis,
             )
             rcsfgenerate_proc_as_odd = subprocess.run(
                 [

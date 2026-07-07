@@ -103,6 +103,10 @@ class Calculation:
                 prev_state = prev_prefix + parity + prev_suffix
                 state = f"as_{parity}{n}"
                 orbitals = self.csfman.active_orbitals_given_n(n)
+                if self.csfman._check_single_orbital_mr(parity):
+                    orbitals = self.csfman._rm_other_parity_from_as_list(
+                        orbitals, parity
+                    )
                 orbitals.append(f"{n}*")
                 print(orbitals)
                 self.csfas = SCFManager(
@@ -141,6 +145,10 @@ class Calculation:
             for parity in parities:
                 print(f"Performing CI calculation up to n={n} for {parity} parity...")
                 orbitals = self.csfman.active_orbitals_given_n(n)
+                if self.csfman._check_single_orbital_mr(parity):
+                    orbitals = self.csfman._rm_other_parity_from_as_list(
+                        orbitals, parity
+                    )
                 state = f"as_{parity}{n}{len(orbitals) + 1 - 1}"
                 self.ci = CIManager(
                     self.cfg,

@@ -139,7 +139,6 @@ class SelfConsistentField:
         nblocks = int(grep_proc.stdout) + 1
 
         with open(fname, "w") as file:
-            print(self.non_default, self.dampen_factor)
             if self.non_default:
                 file.write("n\n")  # non default options
                 file.write("n\n")  # no debug output for now
@@ -211,7 +210,6 @@ class SelfConsistentField:
         n_actual_it = int(
             grep_proc.stdout
         )  # edge case: convergence in last step. but I deem this not so important.
-        print(f"DEBUG: {n_actual_it}, {self.n_iterations}")
 
         if n_actual_it >= self.n_iterations:
             return True

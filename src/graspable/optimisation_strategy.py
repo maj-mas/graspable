@@ -13,9 +13,17 @@ class AbstractOptimisationStrategy(ABC):
         "f": 3,
         "g": 4,
         "h": 5,
-        "i": 6,
-        "j": 7,
-        "k": 8,
+        "j": 6,
+        "k": 7,
+        "l": 8,
+        "m": 9,
+        "n": 10,
+        "o": 11,
+        "q": 12,
+        "r": 13,
+        "t": 14,
+        "u": 15,
+        "v": 16,
     }
     oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys(), strict=False))
     bad_sets_since_last_success = []
