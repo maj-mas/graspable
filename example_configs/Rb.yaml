@@ -1,11 +1,11 @@
 # information about the computing environment
 env:
-  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
+  grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
   working_dir: /home/majam/code/graspable_data/Rb/work # path for intermediate but not temporary files
   output_dir: /home/majam/code/graspable_data/Rb # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
   result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
-    use: true # whether to use mpi
+    use: false # whether to use mpi
     n_p: 1 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
     invoke_cmd: "mpirun -np 1" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/Rb/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
@@ -38,7 +38,7 @@ states:
     even: ["5s1"] # list of even reference states
     odd: ["5p1"] # list of odd reference states
   core: "1s 2s 2p 3s 3p 3d 4s 4p"
-  basis_set: "9s,9p,9d,9f" # string defining the basis expansion in the form "5s,4p,3d"
+  basis_set: "6s,6p,6d,6f" # string defining the basis expansion in the form "5s,4p,3d"
   active: "5s 5p" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
@@ -62,7 +62,7 @@ mr_csf:
 # TODO debug options, level weigths
 as_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 2 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
   maxit: 300
   restart_on_maxit_reached: true
   dampen_factor: null #-0.5

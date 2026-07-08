@@ -45,6 +45,7 @@ states:
   basis_set: null # string defining the basis expansion in the form "5s,4p,3d"
   core: null # space delimited list of frozen core subshells. here, 4p refers to both the 4p and 4prelativistic subshells
   active: null # space delimited list of active shells or object specifying minimum occupation for every shell
+  advanced: null
   excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   reduce: false # whether to attempt to reduce the active space using rcsfinteract
   2j_min: null # minimum value of 2J for generated CSFs

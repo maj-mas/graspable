@@ -108,19 +108,35 @@ class CSFManager:
             self.core_str += f"{orbital}({self._full_occupation(l)},c)"
 
     def _parse_active(self):
-        """Parses the string defining the active orbitals, which are allowed to contain the wildcard symbol *. In the future, support for more detailed occupation specification will be added (e.g. 'd2p orbital can have 3 to 5 electrons').
+        """Parses the string defining the active orbitals, which are allowed to contain the wildcard symbol *.
 
         Raises:
             RuntimeError: Raised if an orbital is found both in the core and the active list.
         """
-        if self.cfg["active"] is dict:
-            raise NotImplementedError(
-                "Detailed active space specification is not implemented yet."
-            )
+        if self.cfg["advanced"] is not None:
+            self._parse_active_advanced()
+            return
         if self.cfg["active"] is not None:
             self.active = self.cfg["active"].split(" ")
         else:
             self.active = []
+
+        for orbital in self.active:
+            if orbital in self.core:
+                raise RuntimeError(
+                    f"Orbital {orbital} cannot belong to core and be active."
+                )  # TODO nice test case candidate
+
+    def _parse_active_advanced(self):
+        """Parses the advanced definition of the active orbitals, which are allowed to contain the wildcard symbol *.
+
+        Raises:
+            RuntimeError: Raised if an orbital is found both in the core and the active list.
+        """
+        self.active = []
+        for set in self.cfg["advanced"].keys():
+            for shell in set.split(" "):
+                self.active.append(shell)
 
         for orbital in self.active:
             if orbital in self.core:
@@ -158,11 +174,15 @@ class CSFManager:
                 return True  # e.g. "3p" matches "*p"
         return False
 
-    def _assemble_state(self, state: str) -> str:
+    def _assemble_state(
+        self, state: str, set: str | None = None, min_occ: dict | None = None
+    ) -> str:
         """Converts a simple non-relativistic config string such as 2s2 2p1 to GRASP notation, e.g. 2s(2,*) 2p(1,*) depending on which orbitals are configured active or closed.
 
         Args:
             state (str): State string.
+            set (str | None, optional): current set. Defaults to None.
+            min_occ (min_occ | None, optional): Minimum occupation for given shells, overriding the automatic determination of the type. Must look like {"4d": 3, "5s": 1}. Defaults to None.
 
         Raises:
             RuntimeError: Raised if an orbital is found both in the core and the active list.
@@ -179,12 +199,27 @@ class CSFManager:
                 )
             n, l, occ = self._decompose_shell(shell)
             active = self._check_active(f"{n}{self.oam_symbols_rev[l]}")
-            if occ == self._full_occupation(l) and not active:
-                type = "c"
-            if active:
-                type = "*"
-            else:
-                type = "i"
+            m = None
+            if min_occ is not None:
+                try:
+                    m = min_occ[f"{n}{self.oam_symbols_rev[l]}"]
+                    if m > occ:
+                        raise RuntimeError(
+                            f"Minimum occupation of shell {n}{self.oam_symbols_rev[l]} configured to be {m}, but occupation in multireference is {occ}."
+                        )
+                    type = str(m)
+                except KeyError:
+                    pass
+            if m is None:
+                if occ == self._full_occupation(l) and not active:
+                    type = "c"
+                elif active:
+                    type = "*"
+                else:
+                    type = "i"
+            if set is not None:
+                if f"{n}{self.oam_symbols_rev[l]}" not in set:
+                    type = "i"  # shells not in current set should be held
 
             state_grasp += f"{n}{self.oam_symbols_rev[l]}({occ},{type})"
 
@@ -209,6 +244,9 @@ class CSFManager:
 
     def _assemble_states(self):
         """Parses states from the config to grasp format and creates a list of all orbitals that appear in the configuration for both parities."""
+        if self.cfg["advanced"] is not None:
+            self._assemble_states_advanced()
+            return
         if self.has_even:
             self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
             self.states_even = []
@@ -231,77 +269,167 @@ class CSFManager:
 
                 self.states_odd.append(self._assemble_state(state))
 
+    def _assemble_states_advanced(self):
+        if self.has_even:
+            self.orbitals_even = deepcopy(self.core)  # also get a list of all orbitals
+            self.states_even = []
+            self.states_even_by_spec = {}
+            self.exc_by_spec_even = {}  # this technically doesn't depend on parity but it's easier to do it like this in case one parity is missing
+            self.basis_by_spec_even = {}  # same as above
+            for state in self.cfg["multireference"]["even"]:
+                orbitals_state = self._orbitals_from_state(state)
+                for orbital in orbitals_state:
+                    if orbital not in self.orbitals_even:
+                        self.orbitals_even.append(orbital)
+
+                self.states_even.append(
+                    self._assemble_state(state)
+                )  # keep for mr only part
+            for set in self.cfg["advanced"]:
+                self.states_even_by_spec[set] = []
+                for state in self.cfg["multireference"]["even"]:
+                    self.states_even_by_spec[set].append(
+                        self._assemble_state(
+                            state, set=set, min_occ=self.cfg["advanced"][set]["min_occ"]
+                        )
+                    )
+                self.exc_by_spec_even[set] = self.cfg["advanced"][set]["excitations"]
+                self.basis_by_spec_even[set] = self.cfg["advanced"][set]["basis_set"]
+
+        if self.has_odd:
+            self.orbitals_odd = deepcopy(self.core)  # also get a list of all orbitals
+            self.states_odd = []
+            self.states_odd_by_spec = {}
+            self.exc_by_spec_odd = {}  # this technically doesn't depend on parity but it's easier to do it like this in case one parity is missing
+            self.basis_by_spec_odd = {}  # same as above
+            for state in self.cfg["multireference"]["odd"]:
+                orbitals_state = self._orbitals_from_state(state)
+                for orbital in orbitals_state:
+                    if orbital not in self.orbitals_odd:
+                        self.orbitals_odd.append(orbital)
+
+                self.states_odd.append(
+                    self._assemble_state(state)
+                )  # keep for mr only part
+            for set in self.cfg["advanced"]:
+                self.states_odd_by_spec[set] = []
+                for state in self.cfg["multireference"]["odd"]:
+                    self.states_odd_by_spec[set].append(
+                        self._assemble_state(
+                            state, set=set, min_occ=self.cfg["advanced"][set]["min_occ"]
+                        )
+                    )
+                self.exc_by_spec_odd[set] = self.cfg["advanced"][set]["excitations"]
+                self.basis_by_spec_odd[set] = self.cfg["advanced"][set]["basis_set"]
+
     def _create_rcsfgenerate_input(
         self,
         fname: str,
-        states: list[str],
-        exc: int,
+        states: list[str] | dict,
+        exc: int | dict,
         j2_min: int,
         j2_max: int,
-        manual_basis: str | None = None,
+        manual_basis: str | dict | None = None,
     ):
-        """Creates an input file for the CSF list generating programs of graspg.
+        """Creates an input file for the CSF list generating programs of grasp.
 
         Args:
             fname (str): File name.
-            states (list[str]): List of configurations in grasp format.
-            exc (int): Number of excitations using grasp sign convention.
+            states (list[str] or dict): List of configurations in grasp format. Alternatively, a dict such that multiple different excitation configurations can be specified.
+            exc (int): Number of excitations using grasp sign convention. If states is dict, must also be dict.
             j2_min (int): Minimum value of 2J for states to be generated.
             j2_max (int): Maximum value of 2J for states to be generated.
-            manual_basis (str | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. Defaults to None.
+            manual_basis (str | dict | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. If states is dict, must also be a dict with a basis set for every set. Defaults to None.
         """
-        with open(f"input/{fname}", "w") as file:
-            if not self.graspg:
-                file.write("*\n")  # default order
-            file.write("0\n")  # no pre-def core
-            file.writelines(state + "\n" for state in states)  # states
-            file.write("\n")  # end states
-            if manual_basis is None:
-                file.write(self.cfg["basis_set"] + "\n")  # as basis set
-            else:
-                file.write(manual_basis + "\n")  # as basis set
-            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
-            file.write(str(exc) + "\n")  # # of excitations
-            file.write("n\n")  # end
+        if isinstance(states, list):
+            with open(f"input/{fname}", "w") as file:
+                if not self.graspg:
+                    file.write("*\n")  # default order
+                file.write("0\n")  # no pre-def core
+                file.writelines(state + "\n" for state in states)  # states
+                file.write("\n")  # end states
+                if manual_basis is None:
+                    file.write(self.cfg["basis_set"] + "\n")  # as basis set
+                else:
+                    file.write(manual_basis + "\n")  # as basis set
+                file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                file.write(str(exc) + "\n")  # # of excitations
+                file.write("n\n")  # end
+        elif isinstance(states, dict):
+            with open(f"input/{fname}", "w") as file:
+                if not self.graspg:
+                    file.write("*\n")  # default order
+                file.write("0\n")  # no pre-def core
+                for i, set_key in enumerate(states.keys()):
+                    file.writelines(state + "\n" for state in states[set_key])  # states
+                    file.write("\n")  # end states
+                    file.write(manual_basis[set_key] + "\n")
+                    file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                    file.write(str(exc[set_key]) + "\n")  # # of excitations
+                    file.write("n\n" if i + 1 == len(states.keys()) else "y\n")  # end
+        else:
+            raise RuntimeError("'states' must be list or dict.")
 
     def _create_rcsfgenerate_input_graspg(
         self,
         fname: str,
-        states: list[str],
-        exc: int,
+        states: list[str] | dict,
+        exc: int | dict,
         j2_min: int,
         j2_max: int,
-        manual_basis: str | None = None,
+        manual_basis: str | dict | None = None,
     ):
         """Creates an input file for the CSF list generating programs of graspg.
 
         Args:
             fname (str): File name.
-            states (list[str]): List of configurations in grasp format.
-            exc (int): Number of excitations using grasp sign convention.
+            states (list[str] or dict): List of configurations in grasp format. Alternatively, a dict such that multiple different excitation configurations can be specified.
+            exc (int): Number of excitations using grasp sign convention. If states is dict, must also be dict.
             j2_min (int): Minimum value of 2J for states to be generated.
             j2_max (int): Maximum value of 2J for states to be generated.
-            manual_basis (str | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. Defaults to None.
+            manual_basis (str | dict | None, optional): List of basis set listing maximum l for each n, e.g. '5s,4p,3d'. If None, basis_set from config is used. If states is dict, must also be a dict with a basis set for every set. Defaults to None.
         """
-        with open(f"input/{fname}", "w") as file:
-            # for graspg: mr only first
-            file.write("0\n")  # no pre-def core
-            file.writelines(state + "\n" for state in states)  # states
-            file.write("\n")  # end states
-            file.write(self.cfg["labelling_space"] + "\n")  # labelling space
-            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
-            file.write("0\n")  # # of excitations
-            file.write("y\n")  # end
-            file.writelines(state + "\n" for state in states)  # states
-            file.write("\n")  # end states
-            # then add as
-            if manual_basis is None:
-                file.write(self.cfg["basis_set"] + "\n")  # as basis set
-            else:
-                file.write(manual_basis + "\n")  # as basis set
-            file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
-            file.write(str(exc) + "\n")  # # of excitations
-            file.write("n\n")  # end
+        if isinstance(states, list):
+            with open(f"input/{fname}", "w") as file:
+                # for graspg: mr only first
+                file.write("0\n")  # no pre-def core
+                file.writelines(state + "\n" for state in states)  # states
+                file.write("\n")  # end states
+                file.write(self.cfg["labelling_space"] + "\n")  # labelling space
+                file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                file.write("0\n")  # # of excitations
+                file.write("y\n")  # end
+                file.writelines(state + "\n" for state in states)  # states
+                file.write("\n")  # end states
+                # then add as
+                if manual_basis is None:
+                    file.write(self.cfg["basis_set"] + "\n")  # as basis set
+                else:
+                    file.write(manual_basis + "\n")  # as basis set
+                file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                file.write(str(exc) + "\n")  # # of excitations
+                file.write("n\n")  # end
+        elif isinstance(states, dict):
+            with open(f"input/{fname}", "w") as file:
+                # for graspg: mr only first
+                file.write("0\n")  # no pre-def core
+                for _i, set_key in enumerate(states.keys()):
+                    file.writelines(state + "\n" for state in states[set_key])
+                file.write("\n")  # end states
+                file.write(self.cfg["labelling_space"] + "\n")  # labelling space
+                file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                file.write("0\n")  # # of excitations
+                file.write("y\n")  # end
+                for i, set_key in enumerate(states.keys()):
+                    file.writelines(state + "\n" for state in states[set_key])  # states
+                    file.write("\n")  # end states
+                    # then add as
+                    file.write(manual_basis[set_key] + "\n")
+                    file.write(str(j2_min) + "," + str(j2_max) + "\n")  # 2j lower,upper
+                    file.write(str(exc[set_key]) + "\n")  # of excitations
+                    file.write("n\n" if i + 1 == len(states.keys()) else "y\n")  # end
+        else:
+            raise RuntimeError("'states' must be list or dict.")
 
     def _select_split(self) -> tuple[int, int]:
         """Finds highest n in even and odd configs and highest n in basis set.
@@ -591,11 +719,17 @@ class CSFManager:
 
             self._create_rcsfgenerate_input(
                 "rcsfgenerate_input_as_even",
-                self.states_even,
-                self.cfg["excitations"],
+                self.states_even
+                if self.cfg["advanced"] is None
+                else self.states_even_by_spec,
+                self.cfg["excitations"]
+                if self.cfg["advanced"] is None
+                else self.exc_by_spec_even,
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
-                manual_basis=basis,
+                manual_basis=basis
+                if self.cfg["advanced"] is None
+                else self.basis_by_spec_even,
             )
             rcsfgenerate_proc_as_even = subprocess.run(
                 [
@@ -618,11 +752,17 @@ class CSFManager:
 
             self._create_rcsfgenerate_input(
                 "rcsfgenerate_input_as_odd",
-                self.states_odd,
-                self.cfg["excitations"],
+                self.states_odd
+                if self.cfg["advanced"] is None
+                else self.states_odd_by_spec,
+                self.cfg["excitations"]
+                if self.cfg["advanced"] is None
+                else self.exc_by_spec_odd,
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
-                manual_basis=basis,
+                manual_basis=basis
+                if self.cfg["advanced"] is None
+                else self.basis_by_spec_odd,
             )
             rcsfgenerate_proc_as_odd = subprocess.run(
                 [
@@ -645,11 +785,17 @@ class CSFManager:
 
             self._create_rcsfgenerate_input_graspg(
                 "rcsfgenerate_input_as_even",
-                self.states_even,
-                self.cfg["excitations"],
+                self.states_even
+                if self.cfg["advanced"] is None
+                else self.states_even_by_spec,
+                self.cfg["excitations"]
+                if self.cfg["advanced"] is None
+                else self.exc_by_spec_even,
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
-                manual_basis=basis,
+                manual_basis=basis
+                if self.cfg["advanced"] is None
+                else self.basis_by_spec_even,
             )
             rcsfgenerate_proc_as_even = subprocess.run(
                 [
@@ -675,11 +821,17 @@ class CSFManager:
 
             self._create_rcsfgenerate_input_graspg(
                 "rcsfgenerate_input_as_odd",
-                self.states_odd,
-                self.cfg["excitations"],
+                self.states_odd
+                if self.cfg["advanced"] is None
+                else self.states_odd_by_spec,
+                self.cfg["excitations"]
+                if self.cfg["advanced"] is None
+                else self.exc_by_spec_odd,
                 self.cfg["2j_min"],
                 self.cfg["2j_max"],
-                manual_basis=basis,
+                manual_basis=basis
+                if self.cfg["advanced"] is None
+                else self.basis_by_spec_odd,
             )
             rcsfgenerate_proc_as_odd = subprocess.run(
                 [
