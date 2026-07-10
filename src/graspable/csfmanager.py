@@ -134,8 +134,8 @@ class CSFManager:
             RuntimeError: Raised if an orbital is found both in the core and the active list.
         """
         self.active = []
-        for set in self.cfg["advanced"].keys():
-            for shell in set.split(" "):
+        for orbital_set in self.cfg["advanced"].keys():
+            for shell in orbital_set.split(" "):
                 self.active.append(shell)
 
         for orbital in self.active:
@@ -175,13 +175,13 @@ class CSFManager:
         return False
 
     def _assemble_state(
-        self, state: str, set: str | None = None, min_occ: dict | None = None
+        self, state: str, orbital_set: str | None = None, min_occ: dict | None = None
     ) -> str:
         """Converts a simple non-relativistic config string such as 2s2 2p1 to GRASP notation, e.g. 2s(2,*) 2p(1,*) depending on which orbitals are configured active or closed.
 
         Args:
             state (str): State string.
-            set (str | None, optional): current set. Defaults to None.
+            orbital_set (str | None, optional): current set. Defaults to None.
             min_occ (min_occ | None, optional): Minimum occupation for given shells, overriding the automatic determination of the type. Must look like {"4d": 3, "5s": 1}. Defaults to None.
 
         Raises:
@@ -217,8 +217,8 @@ class CSFManager:
                     type = "*"
                 else:
                     type = "i"
-            if set is not None:
-                if f"{n}{self.oam_symbols_rev[l]}" not in set:
+            if orbital_set is not None:
+                if f"{n}{self.oam_symbols_rev[l]}" not in orbital_set:
                     type = "i"  # shells not in current set should be held
 
             state_grasp += f"{n}{self.oam_symbols_rev[l]}({occ},{type})"
@@ -285,16 +285,22 @@ class CSFManager:
                 self.states_even.append(
                     self._assemble_state(state)
                 )  # keep for mr only part
-            for set in self.cfg["advanced"]:
-                self.states_even_by_spec[set] = []
+            for orbital_set in self.cfg["advanced"]:
+                self.states_even_by_spec[orbital_set] = []
                 for state in self.cfg["multireference"]["even"]:
-                    self.states_even_by_spec[set].append(
+                    self.states_even_by_spec[orbital_set].append(
                         self._assemble_state(
-                            state, set=set, min_occ=self.cfg["advanced"][set]["min_occ"]
+                            state,
+                            orbital_set=orbital_set,
+                            min_occ=self.cfg["advanced"][orbital_set]["min_occ"],
                         )
                     )
-                self.exc_by_spec_even[set] = self.cfg["advanced"][set]["excitations"]
-                self.basis_by_spec_even[set] = self.cfg["advanced"][set]["basis_set"]
+                self.exc_by_spec_even[orbital_set] = self.cfg["advanced"][orbital_set][
+                    "excitations"
+                ]
+                self.basis_by_spec_even[orbital_set] = self.cfg["advanced"][
+                    orbital_set
+                ]["basis_set"]
 
         if self.has_odd:
             self.orbitals_odd = deepcopy(self.core)  # also get a list of all orbitals
@@ -311,16 +317,22 @@ class CSFManager:
                 self.states_odd.append(
                     self._assemble_state(state)
                 )  # keep for mr only part
-            for set in self.cfg["advanced"]:
-                self.states_odd_by_spec[set] = []
+            for orbital_set in self.cfg["advanced"]:
+                self.states_odd_by_spec[orbital_set] = []
                 for state in self.cfg["multireference"]["odd"]:
-                    self.states_odd_by_spec[set].append(
+                    self.states_odd_by_spec[orbital_set].append(
                         self._assemble_state(
-                            state, set=set, min_occ=self.cfg["advanced"][set]["min_occ"]
+                            state,
+                            orbital_set=orbital_set,
+                            min_occ=self.cfg["advanced"][orbital_set]["min_occ"],
                         )
                     )
-                self.exc_by_spec_odd[set] = self.cfg["advanced"][set]["excitations"]
-                self.basis_by_spec_odd[set] = self.cfg["advanced"][set]["basis_set"]
+                self.exc_by_spec_odd[orbital_set] = self.cfg["advanced"][orbital_set][
+                    "excitations"
+                ]
+                self.basis_by_spec_odd[orbital_set] = self.cfg["advanced"][orbital_set][
+                    "basis_set"
+                ]
 
     def _create_rcsfgenerate_input(
         self,
