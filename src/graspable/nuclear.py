@@ -4,9 +4,10 @@ import subprocess
 class Nuclear:
     """Generates nuclear data for GRASP calculation based on config."""
 
-    def __init__(self, cfg: dict, execs: dict) -> None:
+    def __init__(self, cfg: dict, execs: dict, exitcode_log: list) -> None:
         self.cfg = cfg["nuclear"]
         self.execs = execs
+        self.exitcode_log = exitcode_log
 
     def _create_rnuclear_input(self):
         with open("input/rnucleus_input", "w") as file:
@@ -43,4 +44,7 @@ class Nuclear:
             shell=True,
             executable="/bin/bash",
         )
-        print(f"rnucleus completed with exit code {rnucleus_proc.returncode}.")
+        print(
+            f"rnucleus completed {'successfully.' if rnucleus_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+        )
+        self.exitcode_log.append({"rnucleus": rnucleus_proc.returncode})

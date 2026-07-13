@@ -17,6 +17,7 @@ class SCFManager:
         self,
         cfg: dict,
         execs: dict,
+        exitcode_log: list,
         strategy: AbstractOptimisationStrategy,
         state: str,
         orbitals: list[str],
@@ -32,6 +33,7 @@ class SCFManager:
         Args:
             cfg (dict): Config
             execs (dict): Map of grasp commands
+            exitcode_log (list): list that stores exitcodes of all CLI calls during the calculation
             strategy (AbstractOptimisationStrategy): Orbital optimisation strategy that produces consequent sets of orbitals to optimise together and checks for convergence.
             state (str): name of state on disk
             orbitals (list[str]): Orbitals to include in optimisation
@@ -47,6 +49,7 @@ class SCFManager:
         """
         self.cfg = cfg
         self.execs = execs
+        self.exitcode_log = exitcode_log
         self.strategy_class = strategy
         self.state = state
         self.orbitals = orbitals
@@ -99,6 +102,7 @@ class SCFManager:
             shell=True,
             executable="/bin/bash",
         )
+        self.exitcode_log.append({"cp": cp_proc.returncode})
         if cp_proc.returncode != 0:
             raise RuntimeError(
                 f"Error copying {self.state}.{'g' if self.graspg else 'c'} to rcsf{'g' if self.graspg else ''}.inp"
@@ -109,6 +113,7 @@ class SCFManager:
             )
             if cp_proc.returncode != 0:
                 raise RuntimeError(f"Error copying {self.state}.l to rlabel.inp")
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
         rangular_exec = (
             self.execs["rangular"] if self.mpi else self.execs["rangular_nmpi"]
@@ -118,7 +123,9 @@ class SCFManager:
             shell=True,
             executable="/bin/bash",
         )
-        print(f"rangular completed with exit code {rangular_proc.returncode}.")
+        print(
+            f"rangular completed {'successfully.' if rangular_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+        )
 
         strategy = self.strategy_class(self.orbitals)
 
@@ -128,6 +135,7 @@ class SCFManager:
         print(f"Trying set {optimize_orbitals}.")
         scf = SelfConsistentField(
             execs=self.execs,
+            exitcode_log=self.exitcode_log,
             orbitals_optimise=optimize_orbitals,
             orbitals_spectroscopic=self.orbitals_spectroscopic,
             run_name=self.id + str(i),
@@ -156,6 +164,7 @@ class SCFManager:
             )
             scf = SelfConsistentField(
                 execs=self.execs,
+                exitcode_log=self.exitcode_log,
                 orbitals_optimise=optimize_orbitals,
                 orbitals_spectroscopic=self.orbitals_spectroscopic,
                 run_name=run_name,
@@ -188,6 +197,7 @@ class SCFManager:
             print(f"Trying set {optimize_orbitals}.")
             scf = SelfConsistentField(
                 execs=self.execs,
+                exitcode_log=self.exitcode_log,
                 orbitals_optimise=optimize_orbitals,
                 orbitals_spectroscopic=self.orbitals_spectroscopic,
                 run_name=self.id + "_all",

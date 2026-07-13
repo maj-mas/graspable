@@ -7,6 +7,7 @@ from .nuclear import Nuclear
 from .optimisation_strategy import RandomStrategy, SuccessiveStrategy
 from .scfmanager import SCFManager
 from .transition import Transition
+from .summary import Summary
 from .cleanup import Clean
 
 
@@ -15,6 +16,8 @@ class Calculation:
 
     Note that all config entries must be present to ensure no crashes. If a Calculation object is created in the Main class by claling graspable from the command line, default values from the empty config are inserted so that non-required values can be omitted.
     """
+
+    exitcode_log = []
 
     def __init__(self, cfg: dict) -> None:
         self.cfg = cfg
@@ -37,14 +40,14 @@ class Calculation:
 
     def _setup_nuclear(self):
         print("Creating nuclear data...")
-        self.nuclear = Nuclear(self.cfg, self.execs)
+        self.nuclear = Nuclear(self.cfg, self.execs, self.exitcode_log)
         self.nuclear.setup()
         print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
         self.time = datetime.now()
 
     def _generate_csfs(self):
         print("Generating lists of CSFs...")
-        self.csfman = CSFManager(self.cfg, self.execs)
+        self.csfman = CSFManager(self.cfg, self.execs, self.exitcode_log)
         self.csfman.setup()
         print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
         self.time = datetime.now()
@@ -67,6 +70,7 @@ class Calculation:
             self.csfmr = SCFManager(
                 self.cfg,
                 self.execs,
+                self.exitcode_log,
                 strategy=RandomStrategy,
                 state=state,
                 orbitals=orbitals,
@@ -112,6 +116,7 @@ class Calculation:
                 self.csfas = SCFManager(
                     self.cfg,
                     self.execs,
+                    self.exitcode_log,
                     strategy=SuccessiveStrategy,
                     state=state,
                     orbitals=orbitals,
@@ -153,6 +158,7 @@ class Calculation:
                 self.ci = CIManager(
                     self.cfg,
                     self.execs,
+                    self.exitcode_log,
                     self.cfg["as_csf"]["levels_per_j"],
                     id=state,
                 )
@@ -168,8 +174,16 @@ class Calculation:
         state_even = f"as_even{n}{len(orbitals) + 1 - 1}CI"
         state_odd = f"as_odd{n}{len(orbitals) + 1 - 1}CI"
 
-        self.trans = Transition(self.cfg, self.execs, state_even, state_odd)
+        self.trans = Transition(
+            self.cfg, self.execs, self.exitcode_log, state_even, state_odd
+        )
         self.trans.run()
+        print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
+        self.time = datetime.now()
+
+    def _summary(self):
+        print("Generating output tables and summary...")
+        self.sum = Summary(self.cfg, self.execs)
         print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
         self.time = datetime.now()
 
@@ -202,6 +216,9 @@ class Calculation:
 
         # transition
         self._trans()
+
+        # summary
+        self._summary()
 
         # perform cleanup
         self._cleanup()

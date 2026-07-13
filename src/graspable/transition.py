@@ -6,11 +6,13 @@ class Transition:
         self,
         cfg: dict,
         execs: dict,
+        exitcode_log: list,
         state_even: str | None = None,
         state_odd: str | None = None,
     ) -> None:
         self.cfg = cfg["trans"]
         self.execs = execs
+        self.exitcode_log = exitcode_log
         if state_even is None and state_odd is None:
             raise RuntimeError("Transition calculation begun but no states were given.")
         self.state_even = state_even
@@ -55,16 +57,18 @@ class Transition:
 
     def run(self):
         if self.cfg["eveneven"] and self.has_even:
-            subprocess.run(
+            cp_proc = subprocess.run(
                 [f"cp {self.state_even}.w {self.state_even}.bw"],
                 shell=True,
                 executable="/bin/bash",
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 [f"cp {self.state_even}.cm {self.state_even}.cbm"],
                 shell=True,
                 executable="/bin/bash",
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
             self._create_rtransition_input(
                 f"input/rtransition_input_{self.state_even}_{self.state_even}",
@@ -79,19 +83,24 @@ class Transition:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"rtransition completed with exit code {rtransproc.returncode}.")
+            print(
+                f"rtransition completed {'successfully.' if rtransproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"rtransition": rtransproc.returncode})
 
         if self.cfg["oddodd"] and self.has_odd:
-            subprocess.run(
+            cp_proc = subprocess.run(
                 [f"cp {self.state_odd}.w {self.state_odd}.bw"],
                 shell=True,
                 executable="/bin/bash",
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 [f"cp {self.state_odd}.cm {self.state_odd}.cbm"],
                 shell=True,
                 executable="/bin/bash",
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
             self._create_rtransition_input(
                 f"input/rtransition_input_{self.state_odd}_{self.state_odd}",
@@ -106,7 +115,10 @@ class Transition:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"rtransition completed with exit code {rtransproc.returncode}.")
+            print(
+                f"rtransition completed {'successfully.' if rtransproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"rtransition": rtransproc.returncode})
 
         if self.cfg["evenodd"] and (self.has_even and self.has_odd):
             self._create_rbiotransform_input(
@@ -121,7 +133,10 @@ class Transition:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"rbiotransform completed with exit code {rbioproc.returncode}.")
+            print(
+                f"rbiotransform completed {'successfully.' if rbioproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"rbiotransform": rbioproc.returncode})
 
             self._create_rtransition_input(
                 f"input/rtransition_input_{self.state_even}_{self.state_odd}",
@@ -136,4 +151,7 @@ class Transition:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"rtransition completed with exit code {rtransproc.returncode}.")
+            print(
+                f"rtransition completed {'successfully.' if rtransproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"rtransition": rtransproc.returncode})

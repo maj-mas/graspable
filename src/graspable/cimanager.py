@@ -9,6 +9,7 @@ class CIManager:
         self,
         cfg: dict,
         execs: dict,
+        exitcode_log: list,
         levels_per_j: int | list[int],
         id: str,
         jj2lsj: bool = True,
@@ -18,12 +19,14 @@ class CIManager:
         Args:
             cfg (dict): Configuration
             execs (dict): Map of grasp executables
+            exitcode_log (list): list that stores exitcodes of all CLI calls during the calculation
             levels_per_j (int | list[int]):  Number of levels per symmetry block, applies either to all equally if int or can be specified per block if list[int].
             id (str): Name to save state as.
             jj2lsj (bool, optional): Whether to perform jj -> lsj label transformation. Defaults to True.
         """
         self.cfg = cfg["ci"]
         self.execs = execs
+        self.exitcode_log = exitcode_log
         self.qed_cfg = cfg["ci"]["qed"]
         self.levels_per_j = levels_per_j
         self.id = id
@@ -154,7 +157,7 @@ class CIManager:
     def run(self):
         """Performs the CI calculation. Must be called after initialisation."""
         if self.qed_cfg["with_and_without"]:
-            subprocess.run(
+            cp_proc = subprocess.run(
                 [
                     f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI_noqed.{'c' if not self.graspg else 'g'}"
                 ],
@@ -162,19 +165,22 @@ class CIManager:
                 executable="/bin/bash",
                 capture_output=True,
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 [f"cp {self.id}.w {self.id}CI_noqed.w"],
                 shell=True,
                 executable="/bin/bash",
                 capture_output=True,
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
             if self.graspg:
-                subprocess.run(
+                cp_proc = subprocess.run(
                     [f"cp {self.id}.l {self.id}CI_noqed.l"],
                     shell=True,
                     executable="/bin/bash",
                     capture_output=True,
                 )
+                self.exitcode_log.append({"cp": cp_proc.returncode})
             if not self.graspg:
                 self._create_rci_input(
                     f"input/rci_input_{self.id}_noqed", f"{self.id}CI_noqed", qed=False
@@ -184,7 +190,7 @@ class CIManager:
                     f"input/rci_input_{self.id}_noqed", f"{self.id}CI_noqed", qed=False
                 )
 
-        subprocess.run(
+        cp_proc = subprocess.run(
             [
                 f"cp {self.id}.{'c' if not self.graspg else 'g'} {self.id}CI.{'c' if not self.graspg else 'g'}"
             ],
@@ -192,19 +198,22 @@ class CIManager:
             executable="/bin/bash",
             capture_output=True,
         )
-        subprocess.run(
+        self.exitcode_log.append({"cp": cp_proc.returncode})
+        cp_proc = subprocess.run(
             [f"cp {self.id}.w {self.id}CI.w"],
             shell=True,
             executable="/bin/bash",
             capture_output=True,
         )
+        self.exitcode_log.append({"cp": cp_proc.returncode})
         if self.graspg:
-            subprocess.run(
+            cp_proc = subprocess.run(
                 [f"cp {self.id}.l {self.id}CI.l"],
                 shell=True,
                 executable="/bin/bash",
                 capture_output=True,
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
         if not self.graspg:
             self._create_rci_input(f"input/rci_input_{self.id}", f"{self.id}CI")
         else:
@@ -219,7 +228,10 @@ class CIManager:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"rci completed with exit code {rci_noqedproc.returncode}.")
+            print(
+                f"rci completed {'successfully.' if rci_noqedproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"rci": rci_noqedproc.returncode})
             if self.jj2lsj:
                 self._create_jj2lsj_input(
                     f"input/jj2lsj_input_{self.id}_noqed", f"{self.id}CI_noqed"
@@ -231,7 +243,10 @@ class CIManager:
                     shell=True,
                     executable="/bin/bash",
                 )
-                print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")
+                print(
+                    f"jj2lsj completed {'successfully.' if jj2lsjproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+                )
+                self.exitcode_log.append({"jj2lsj": jj2lsjproc.returncode})
             print("...done, moving to regular CI.")
 
         rciproc = subprocess.run(
@@ -241,7 +256,10 @@ class CIManager:
             shell=True,
             executable="/bin/bash",
         )
-        print(f"rci completed with exit code {rciproc.returncode}.")
+        print(
+            f"rci completed {'successfully.' if rciproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+        )
+        self.exitcode_log.append({"rci": rciproc.returncode})
 
         if self.jj2lsj:
             self._create_jj2lsj_input(f"input/jj2lsj_input_{self.id}", f"{self.id}CI")
@@ -252,4 +270,7 @@ class CIManager:
                 shell=True,
                 executable="/bin/bash",
             )
-            print(f"jj2lsj completed with exit code {jj2lsjproc.returncode}.")
+            print(
+                f"jj2lsj completed {'successfully.' if jj2lsjproc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            self.exitcode_log.append({"jj2lsj": jj2lsjproc.returncode})

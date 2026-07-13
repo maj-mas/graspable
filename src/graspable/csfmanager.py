@@ -27,10 +27,11 @@ class CSFManager:
     }
     oam_symbols_rev = dict(zip(oam_symbols.values(), oam_symbols.keys(), strict=True))
 
-    def __init__(self, cfg: dict, execs: dict) -> None:
+    def __init__(self, cfg: dict, execs: dict, exitcode_log: list) -> None:
         self.cfg = cfg["states"]
         self.execs = execs
         self.graspg = cfg["env"]["mpi"]["graspg"]
+        self.exitcode_log = exitcode_log
 
         self.has_even = self.cfg["multireference"]["even"] is not None
         self.has_odd = self.cfg["multireference"]["odd"] is not None
@@ -546,11 +547,16 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_mr_even.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_mr_even.returncode}
+            )
+
+            cp_proc = subprocess.run(
                 ["cp rcsf.out mr_even.c"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
         if self.has_odd:
             self._create_rcsfgenerate_input(
@@ -569,9 +575,16 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_mr_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(["cp rcsf.out mr_odd.c"], shell=True, executable="/bin/bash")
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_mr_odd.returncode}
+            )
+
+            cp_proc = subprocess.run(
+                ["cp rcsf.out mr_odd.c"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
     def _gen_mr_csfg(self):
         """Generates CSFs for the multireference without excitations for both parities, using graspg."""
@@ -594,14 +607,19 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_even.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_mr_even.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_mr_even.returncode}
+            )
+            cp_proc = subprocess.run(
                 ["cp rcsfg.out mr_even.g"], shell=True, executable="/bin/bash"
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 ["cp rlabel.out mr_even.l"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
         if self.has_odd:
             self._create_rcsfgenerate_input(
@@ -620,14 +638,19 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_mr_odd.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_mr_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_mr_odd.returncode}
+            )
+            cp_proc = subprocess.run(
                 ["cp rcsfg.out mr_odd.g"], shell=True, executable="/bin/bash"
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 ["cp rlabel.out mr_odd.l"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
     def _check_single_orbital_mr(self, parity: str) -> bool:
         """Returns True if the mr for the given parity is of single-orbital type (e.g. only contains "5s1"). Returns False, otherwise.
@@ -751,11 +774,15 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_as_even.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_as_even.returncode}
+            )
+            cp_proc = subprocess.run(
                 ["cp rcsf.out as_even.c"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
         if self.has_odd:
             basis = self.cfg["basis_set"]
@@ -784,9 +811,15 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_as_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(["cp rcsf.out as_odd.c"], shell=True, executable="/bin/bash")
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_as_odd.returncode}
+            )
+            cp_proc = subprocess.run(
+                ["cp rcsf.out as_odd.c"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
     def _gen_as_csfg(self):
         """Generates lists of CSFs for the active space for both parities, using graspg."""
@@ -817,14 +850,19 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_even.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_as_even.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_as_even.returncode}
+            )
+            cp_proc = subprocess.run(
                 ["cp rcsfg.out as_even.g"], shell=True, executable="/bin/bash"
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 ["cp rlabel.out as_even.l"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
         if self.has_odd:
             basis = self.cfg["basis_set"]
@@ -853,22 +891,28 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfgenerate completed with exit code {rcsfgenerate_proc_as_odd.returncode}."
+                f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_as_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
-            subprocess.run(
+            self.exitcode_log.append(
+                {"rcsfgenerate": rcsfgenerate_proc_as_odd.returncode}
+            )
+            cp_proc = subprocess.run(
                 ["cp rcsfg.out as_odd.g"], shell=True, executable="/bin/bash"
             )
-            subprocess.run(
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
                 ["cp rlabel.out as_odd.l"], shell=True, executable="/bin/bash"
             )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
 
     def _split_as(self):
         """Splits the list of active space CSFs by principal quantum number for both parities."""
         if self.has_even:
             if self.graspg:
-                subprocess.run(
+                cp_proc = subprocess.run(
                     ["cp as_even.l rlabel.inp"], shell=True, executable="/bin/bash"
                 )
+                self.exitcode_log.append({"cp": cp_proc.returncode})
             self._create_rcsfsplit_input("rcsfsplit_input_even", "as_even")
             rcsfsplit_proc_even = subprocess.run(
                 [
@@ -878,14 +922,16 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfsplit completed with exit code {rcsfsplit_proc_even.returncode}."
+                f"rcsfsplit completed {'successfully.' if rcsfsplit_proc_even.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
+            self.exitcode_log.append({"rcsfsplit": rcsfsplit_proc_even.returncode})
 
         if self.has_odd:
             if self.graspg:
-                subprocess.run(
+                cp_proc = subprocess.run(
                     ["cp as_odd.l rlabel.inp"], shell=True, executable="/bin/bash"
                 )
+                self.exitcode_log.append({"cp": cp_proc.returncode})
             self._create_rcsfsplit_input("rcsfsplit_input_odd", "as_odd")
             rcsfsplit_proc_odd = subprocess.run(
                 [
@@ -895,8 +941,9 @@ class CSFManager:
                 executable="/bin/bash",
             )
             print(
-                f"rcsfsplit completed with exit code {rcsfsplit_proc_odd.returncode}."
+                f"rcsfsplit completed {'successfully.' if rcsfsplit_proc_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
             )
+            self.exitcode_log.append({"rcsfsplit": rcsfsplit_proc_odd.returncode})
 
     def _split_as_csfg(self):
         """Splits the list of active space CSFs by principal quantum number for both parities. Since rcsfsplit is not implemented for the graspg format, we achieve the same result using repeated calls to rcsfggenerate_csfg, resulting in somewhat of a longer runtime."""
@@ -933,14 +980,19 @@ class CSFManager:
                     executable="/bin/bash",
                 )
                 print(
-                    f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_even.returncode}."
+                    f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_split_even.returncode == 0 else 'unsuccessfully, check logs!'}"
                 )
-                subprocess.run(
+                self.exitcode_log.append(
+                    {"rcsfgenerate": rcsfgenerate_proc_split_even.returncode}
+                )
+                cp_proc = subprocess.run(
                     [f"cp rcsfg.out as_even{n}.g"], shell=True, executable="/bin/bash"
                 )
-                subprocess.run(
+                self.exitcode_log.append({"cp": cp_proc.returncode})
+                cp_proc = subprocess.run(
                     [f"cp rlabel.out as_even{n}.l"], shell=True, executable="/bin/bash"
                 )
+                self.exitcode_log.append({"cp": cp_proc.returncode})
 
             if self.has_odd:
                 self._create_rcsfgenerate_input_graspg(
@@ -959,14 +1011,19 @@ class CSFManager:
                     executable="/bin/bash",
                 )
                 print(
-                    f"rcsfgenerate completed with exit code {rcsfgenerate_proc_split_odd.returncode}."
+                    f"rcsfgenerate completed {'successfully.' if rcsfgenerate_proc_split_odd.returncode == 0 else 'unsuccessfully, check logs!'}"
                 )
-                subprocess.run(
+                self.exitcode_log.append(
+                    {"rcsfgenerate": rcsfgenerate_proc_split_odd.returncode}
+                )
+                cp_proc = subprocess.run(
                     [f"cp rcsfg.out as_odd{n}.g"], shell=True, executable="/bin/bash"
                 )
-                subprocess.run(
+                self.exitcode_log.append({"cp": cp_proc.returncode})
+                cp_proc = subprocess.run(
                     [f"cp rlabel.out as_odd{n}.l"], shell=True, executable="/bin/bash"
                 )
+                self.exitcode_log.append({"cp": cp_proc.returncode})
 
     def _check_csfg_labelling_space(self):
         """Checks if the labelling space passed is okay. Otherwise, raises exception."""

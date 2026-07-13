@@ -10,7 +10,7 @@ env:
     invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/Os/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
     mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
-    graspg: false # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
+    graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
   clean: false
   improve: false
   keep_log: true

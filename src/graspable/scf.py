@@ -7,6 +7,7 @@ class SelfConsistentField:
     def __init__(
         self,
         execs: dict,
+        exitcode_log: list,
         orbitals_optimise: str,
         orbitals_spectroscopic: str,
         run_name: str,
@@ -24,6 +25,7 @@ class SelfConsistentField:
 
         Args:
             execs (dict): Map of grasp commands
+            exitcode_log (list): list that stores exitcodes of all CLI calls during the calculation
             orbitals_optimise (str): String containing orbitals to optimise.
             orbitals_spectroscopic (str): String containing orbitals to optimise that are also spectroscopic, i.e. node-counting is enforced.
             run_name (str): Name of run to save it to disk with.
@@ -37,6 +39,7 @@ class SelfConsistentField:
             second_try_on_limit_reached (bool, optional): Can be used to restart a calculation if it reaches the maximum number of iterations. Defaults to False.
         """
         self.execs = execs
+        self.exitcode_log = exitcode_log
         self.orbitals_optimise = self._expand_orbitals_relativistic(orbitals_optimise)
         self.orbitals_spectroscopic = orbitals_spectroscopic
         self.run_name = run_name
@@ -193,6 +196,7 @@ class SelfConsistentField:
         )
         if save_proc.returncode != 0:
             raise RuntimeError("Error during rsave.")
+        self.exitcode_log.append({"rsave": save_proc.returncode})
 
     def _check_maxit_reached(self) -> bool:
         """Used to check if maximum number of iterations was reached.
@@ -239,6 +243,7 @@ class SelfConsistentField:
         )
         if rwfnestimate_proc.returncode != 0:
             raise RuntimeError("Error during rwfnestimate.")
+        self.exitcode_log.append({"rwfnestimate": rwfnestimate_proc.returncode})
 
         self._create_rmcdhf_input(f"input/rmcdhf_input_{self.run_name}")
         rmcdhf_exec = self.execs["rmcdhf"] if self.mpi else self.execs["rmcdhf_nmpi"]
@@ -249,7 +254,10 @@ class SelfConsistentField:
             shell=True,
             executable="/bin/bash",
         )
-        print(f"rmcdhf completed with exit code {rmcdhf_proc.returncode}.")
+        print(
+            f"rmcdhf completed {'successfully.' if rmcdhf_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+        )
+        self.exitcode_log.append({"rmcdhf": rmcdhf_proc.returncode})
 
         self._save(self.run_name)
 
