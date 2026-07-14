@@ -18,6 +18,8 @@ class Environment:
         "rbiotransform": "rbiotransform",
         "rtransition": "rtransition",
         "rcsfinteract": "rcsfinteract",
+        "rlevels": "rlevels",
+        "rtablevels": "rtablevels",
     }  # TODO add missing ones
     mpi_prgs = [
         "rangular",

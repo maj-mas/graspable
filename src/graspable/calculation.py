@@ -183,7 +183,36 @@ class Calculation:
 
     def _summary(self):
         print("Generating output tables and summary...")
-        self.sum = Summary(self.cfg, self.execs)
+
+        n_min = self.csfman.n_min
+        n_max = self.csfman.n_max
+        if self.cfg["ci"]["as_expansion"]:
+            n_min_ci = self.csfman.n_min
+            n_max_ci = self.csfman.n_max
+        else:
+            n_min_ci = self.csfman.n_max
+            n_max_ci = n_min + 1
+
+        # if self.csfman.has_even: TODO
+        #     orbitals = self.csfman.active_orbitals_given_n(n)
+        #     if self.csfman._check_single_orbital_mr("even"):
+        #         orbitals = self.csfman._rm_other_parity_from_as_list(
+        #             orbitals, parity
+        #         )
+
+        self.sum = Summary(
+            self.cfg,
+            self.execs,
+            self.exitcode_log,
+            n_min,
+            n_max,
+            n_min_ci,
+            n_max_ci,
+            self.csfman.has_even,
+            self.csfman.has_odd,
+        )
+        self.sum.create()
+
         print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
         self.time = datetime.now()
 
