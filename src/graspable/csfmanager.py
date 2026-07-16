@@ -588,7 +588,8 @@ class CSFManager:
 
     def _gen_mr_csfg(self):
         """Generates CSFs for the multireference without excitations for both parities, using graspg."""
-        mr_basis = self._mr_basis()
+        # mr_basis = self._mr_basis()
+        mr_basis = self.cfg["labelling_space"]  # test
 
         if self.has_even:
             self._create_rcsfgenerate_input(
@@ -1057,16 +1058,148 @@ class CSFManager:
                 f"Labelling space principal quantum number needs to be at least as large as the largest in the MR. Labelling space n={n}, largest n in MR = {max_n_states}."
             )
 
+    def _reduce(self):
+        print(
+            "Note: Performing reduction of AS CSFs to only ones which interact with the MR states as requested."
+        )
+        if self.has_even:
+            cp_proc = subprocess.run(
+                ["cp as_even.c rcsf.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_even.c rcsfmr.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+            int_proc = subprocess.run(
+                [
+                    f"{self.execs['rcsfinteract']} &> log/rcsfinteract_log_even <<EOF\n{self.cfg['reduce']}\nEOF"
+                ],
+                shell=True,
+                executable="/bin/bash",
+            )
+            self.exitcode_log.append({"rcsfinteract": int_proc.returncode})
+            print(
+                f"rcsfinteract completed {'successfully.' if int_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            cp_proc = subprocess.run(
+                ["cp rcsf.out as_even.c"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+        if self.has_odd:
+            cp_proc = subprocess.run(
+                ["cp as_odd.c rcsf.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_odd.c rcsfmr.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+            int_proc = subprocess.run(
+                [
+                    f"{self.execs['rcsfinteract']} &> log/rcsfinteract_log_odd <<EOF\n{self.cfg['reduce']}\nEOF"
+                ],
+                shell=True,
+                executable="/bin/bash",
+            )
+            self.exitcode_log.append({"rcsfinteract": int_proc.returncode})
+            print(
+                f"rcsfinteract completed {'successfully.' if int_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            cp_proc = subprocess.run(
+                ["cp rcsf.out as_odd.c"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+    def _reduce_csfg(self):
+        print(
+            "Note: Performing reduction of AS CSFs to only ones which interact with the MR states as requested."
+        )
+        if self.has_even:
+            cp_proc = subprocess.run(
+                ["cp as_even.g rcsfg.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp as_even.l rlabel.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_even.g rcsfgmr.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_even.l rcsfgmr.l"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+            int_proc = subprocess.run(
+                [
+                    f"{self.execs['rcsfinteract']} &> log/rcsfinteract_log_even <<EOF\n{self.cfg['reduce']}\nEOF"
+                ],
+                shell=True,
+                executable="/bin/bash",
+            )
+            self.exitcode_log.append({"rcsfinteract": int_proc.returncode})
+            print(
+                f"rcsfinteract completed {'successfully.' if int_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            cp_proc = subprocess.run(
+                ["cp rcsfg.out as_even.g"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+        if self.has_odd:
+            cp_proc = subprocess.run(
+                ["cp as_odd.g rcsfg.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp as_odd.l rlabel.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_odd.g rcsfgmr.inp"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+            cp_proc = subprocess.run(
+                ["cp mr_odd.l rcsfgmr.l"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
+            int_proc = subprocess.run(
+                [
+                    f"{self.execs['rcsfinteract']} &> log/rcsfinteract_log_odd <<EOF\n{self.cfg['reduce']}\nEOF"
+                ],
+                shell=True,
+                executable="/bin/bash",
+            )
+            self.exitcode_log.append({"rcsfinteract": int_proc.returncode})
+            print(
+                f"rcsfinteract completed {'successfully.' if int_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            )
+            cp_proc = subprocess.run(
+                ["cp rcsfg.out as_odd.g"], shell=True, executable="/bin/bash"
+            )
+            self.exitcode_log.append({"cp": cp_proc.returncode})
+
     def setup(self):
         """Generates lists of CSFs according to the config. Must be called after initialisation."""
         if not self.graspg:
             self._gen_mr()
             self._gen_as()
+            if self.cfg["reduce"] != 0:
+                self._reduce()
             self._split_as()
         else:
             self._check_csfg_labelling_space()
             self._gen_mr_csfg()
             self._gen_as_csfg()
+            if self.cfg["reduce"] != 0:
+                self._reduce_csfg()
             self._split_as()
             # self._split_as_csfg()
 

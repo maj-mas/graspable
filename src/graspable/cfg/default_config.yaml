@@ -47,7 +47,7 @@ states:
   active: null # space delimited list of active shells or object specifying minimum occupation for every shell
   advanced: null
   excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
-  reduce: false # whether to attempt to reduce the active space using rcsfinteract
+  reduce: 0 # whether to attempt to reduce the active space using rcsfinteract, 0: no reduction, 1: reduce based on dirac-coulomn (more aggressive), 2: reduce based on dirac-coulomb-breit (keeps  a few more)
   2j_min: null # minimum value of 2J for generated CSFs
   2j_max: null # maximum value of 2J for generated CSFs
   labelling_space: null # must be set appropriately for use with graspg

@@ -37,6 +37,7 @@ class Environment:
         "rsave",
         "rci",
         "jj2lsj",
+        "rcsfinteract",
     ]  # these programs are in graspg
 
     def __init__(self, cfg: dict) -> None:
@@ -125,6 +126,8 @@ class Environment:
                     exec = "rcsfggenerate_csfg"
                 elif exec == "rcsfsplit":
                     exec = "rcsfgsplit_csfg"
+                elif exec == "rcsfinteract":
+                    exec = "rcsfginteract_csfg"
                 else:
                     exec += "_csfg"
                 # check again for graspg programs, user might not have compiled graspg but requested it in config
