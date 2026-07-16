@@ -47,9 +47,11 @@ states:
   #     min_occ:
   #       4f: 10
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
-  reduce: false # whether to attempt to reduce the active space using rcsfinteract
-  2j_min: 0 # minimum value of 2J for generated CSFs
-  2j_max: 12 # maximum value of 2J for generated CSFs
+  reduce: 1 # whether to attempt to reduce the active space using rcsfinteract, 0: no reduction, 1: reduce based on dirac-coulomn (more aggressive), 2: reduce based on dirac-coulomb-breit (keeps  a few more)
+  2j_min_even: 0 # minimum value of 2J for generated even parity CSFs
+  2j_max_even: 12 # maximum value of 2J for generated even parity CSFs
+  2j_min_odd: 4 # minimum value of 2J for generated odd parity CSFs
+  2j_max_odd: 8 # maximum value of 2J for generated odd parity CSFs
   labelling_space: "5s,5p,5d,5f,5g" # must be set appropriately for use with graspg
 
 # parameters for the determination of initial wavefunctions in the multireference

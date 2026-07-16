@@ -255,7 +255,7 @@ class SelfConsistentField:
             executable="/bin/bash",
         )
         print(
-            f"rmcdhf completed {'successfully.' if rmcdhf_proc.returncode == 0 else 'unsuccessfully, check logs!'}"
+            f"rmcdhf completed {'successfully.' if rmcdhf_proc.returncode == 0 else 'unsuccessfully, check logs if this occurs during active space calculation!'}"
         )
         self.exitcode_log.append({"rmcdhf": rmcdhf_proc.returncode})
 

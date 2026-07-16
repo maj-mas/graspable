@@ -48,8 +48,10 @@ states:
   advanced: null
   excitations: null # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   reduce: 0 # whether to attempt to reduce the active space using rcsfinteract, 0: no reduction, 1: reduce based on dirac-coulomn (more aggressive), 2: reduce based on dirac-coulomb-breit (keeps  a few more)
-  2j_min: null # minimum value of 2J for generated CSFs
-  2j_max: null # maximum value of 2J for generated CSFs
+  2j_min_even: null # minimum value of 2J for generated even parity CSFs
+  2j_max_even: null # maximum value of 2J for generated even parity CSFs
+  2j_min_odd: null # minimum value of 2J for generated odd parity CSFs
+  2j_max_odd: null # maximum value of 2J for generated odd parity CSFs
   labelling_space: null # must be set appropriately for use with graspg
 
 # parameters for the determination of angular coefficients

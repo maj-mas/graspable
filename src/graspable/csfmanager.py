@@ -535,8 +535,8 @@ class CSFManager:
                 "rcsfgenerate_input_mr_even",
                 self.states_even,
                 0,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_even"],
+                self.cfg["2j_max_even"],
                 manual_basis=mr_basis,
             )
             rcsfgenerate_proc_mr_even = subprocess.run(
@@ -563,8 +563,8 @@ class CSFManager:
                 "rcsfgenerate_input_mr_odd",
                 self.states_odd,
                 0,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_odd"],
+                self.cfg["2j_max_odd"],
                 manual_basis=mr_basis,
             )
             rcsfgenerate_proc_mr_odd = subprocess.run(
@@ -596,8 +596,8 @@ class CSFManager:
                 "rcsfgenerate_input_mr_even",
                 self.states_even,
                 0,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_even"],
+                self.cfg["2j_max_even"],
                 manual_basis=mr_basis,
             )
             rcsfgenerate_proc_mr_even = subprocess.run(
@@ -627,8 +627,8 @@ class CSFManager:
                 "rcsfgenerate_input_mr_odd",
                 self.states_odd,
                 0,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_odd"],
+                self.cfg["2j_max_odd"],
                 manual_basis=mr_basis,
             )
             rcsfgenerate_proc_mr_odd = subprocess.run(
@@ -761,8 +761,8 @@ class CSFManager:
                 self.cfg["excitations"]
                 if self.cfg["advanced"] is None
                 else self.exc_by_spec_even,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_even"],
+                self.cfg["2j_max_even"],
                 manual_basis=basis
                 if self.cfg["advanced"] is None
                 else self.basis_by_spec_even,
@@ -798,8 +798,8 @@ class CSFManager:
                 self.cfg["excitations"]
                 if self.cfg["advanced"] is None
                 else self.exc_by_spec_odd,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_odd"],
+                self.cfg["2j_max_odd"],
                 manual_basis=basis
                 if self.cfg["advanced"] is None
                 else self.basis_by_spec_odd,
@@ -837,8 +837,8 @@ class CSFManager:
                 self.cfg["excitations"]
                 if self.cfg["advanced"] is None
                 else self.exc_by_spec_even,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_even"],
+                self.cfg["2j_max_even"],
                 manual_basis=basis
                 if self.cfg["advanced"] is None
                 else self.basis_by_spec_even,
@@ -878,8 +878,8 @@ class CSFManager:
                 self.cfg["excitations"]
                 if self.cfg["advanced"] is None
                 else self.exc_by_spec_odd,
-                self.cfg["2j_min"],
-                self.cfg["2j_max"],
+                self.cfg["2j_min_odd"],
+                self.cfg["2j_max_odd"],
                 manual_basis=basis
                 if self.cfg["advanced"] is None
                 else self.basis_by_spec_odd,
@@ -969,8 +969,8 @@ class CSFManager:
                     f"rcsfgenerate_input_as_even_split{n}",
                     self.states_even,
                     self.cfg["excitations"],
-                    self.cfg["2j_min"],
-                    self.cfg["2j_max"],
+                    self.cfg["2j_min_even"],
+                    self.cfg["2j_max_even"],
                     manual_basis=basis,
                 )
                 rcsfgenerate_proc_split_even = subprocess.run(
@@ -1000,8 +1000,8 @@ class CSFManager:
                     f"rcsfgenerate_input_as_odd_split{n}",
                     self.states_odd,
                     self.cfg["excitations"],
-                    self.cfg["2j_min"],
-                    self.cfg["2j_max"],
+                    self.cfg["2j_min_odd"],
+                    self.cfg["2j_max_odd"],
                     manual_basis=basis,
                 )
                 rcsfgenerate_proc_split_odd = subprocess.run(

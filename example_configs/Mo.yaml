@@ -41,9 +41,11 @@ states:
   basis_set: "3s,3p,3d" # string defining the basis expansion in the form "5s,4p,3d" TODO this should error if invalid orbitals present
   active: "*" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
-  reduce: false # whether to attempt to reduce the active space using rcsfinteract
-  2j_min: 1 # minimum value of 2J for generated CSFs
-  2j_max: 5 # maximum value of 2J for generated CSFs
+  reduce: 0 # whether to attempt to reduce the active space using rcsfinteract
+  2j_min_even: 1 # minimum value of 2J for generated CSFs
+  2j_max_even: 5 # maximum value of 2J for generated CSFs
+  2j_min_odd: 1 # minimum value of 2J for generated CSFs
+  2j_max_odd: 5 # maximum value of 2J for generated CSFs
 
 # parameters for the determination of initial wavefunctions in the multireference
 # TODO debug options
