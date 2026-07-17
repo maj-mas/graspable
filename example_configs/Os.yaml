@@ -24,7 +24,7 @@ meta:
 # nuclear data
 nuclear:
   Z: 76 # atomic number
-  A: 190 # mass number,
+  A: 192 # mass number,
   point-like: false # whether to use point-like nuclear potential. same effect achieved by A = 0
   m: 192 # NEUTRAL atomic mass in amu
   static: false # whether the nucleus is to be taken as static. same effect achieved by m = 0

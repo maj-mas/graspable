@@ -586,10 +586,11 @@ class CSFManager:
             )
             self.exitcode_log.append({"cp": cp_proc.returncode})
 
-    def _gen_mr_csfg(self):
+    def _gen_mr_csfg(self, mr_basis=None):
         """Generates CSFs for the multireference without excitations for both parities, using graspg."""
-        # mr_basis = self._mr_basis()
-        mr_basis = self.cfg["labelling_space"]  # test
+        if mr_basis is None:
+            mr_basis = self._mr_basis()
+        # mr_basis = self.cfg["labelling_space"]  # test
 
         if self.has_even:
             self._create_rcsfgenerate_input(
@@ -1039,7 +1040,7 @@ class CSFManager:
                     f"Labelling space definition {self.cfg['labelling_space']} invalid. Needs to be a full set of n-shells, e.g. 3s,3p,3d or 4s,4p,4d,4f."
                 )
             ls.append(new_l)
-            n = new_n
+            # n = new_n
         # the principal quantum number of the labelling space needs to be at least as large as the largest principal quantum number in the multireference
         max_n_states = 0
         orbitals_lookup = []
@@ -1199,7 +1200,9 @@ class CSFManager:
             self._gen_mr_csfg()
             self._gen_as_csfg()
             if self.cfg["reduce"] != 0:
+                self._gen_mr_csfg(mr_basis=self.cfg["labelling_space"])
                 self._reduce_csfg()
+                self._gen_mr_csfg()  # hack, otherwise rcsfginteract_csfg complains about mismatching labelling spaces
             self._split_as()
             # self._split_as_csfg()
 

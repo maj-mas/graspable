@@ -132,12 +132,17 @@ class SCFManager:
         i = 0
         successful_run_exists = False
         optimize_orbitals = " ".join(strategy.next_set())
+        # fix for additional unoccupied labelling space orbitals present in mr calculations with graspg
+        if self.type == "mr":
+            orbitals_spectroscopic = optimize_orbitals
+        else:
+            orbitals_spectroscopic = self.orbitals_spectroscopic
         print(f"Trying set {optimize_orbitals}.")
         scf = SelfConsistentField(
             execs=self.execs,
             exitcode_log=self.exitcode_log,
             orbitals_optimise=optimize_orbitals,
-            orbitals_spectroscopic=self.orbitals_spectroscopic,
+            orbitals_spectroscopic=orbitals_spectroscopic,
             run_name=self.id + str(i),
             levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
             mpi=self.mpi,
@@ -156,22 +161,38 @@ class SCFManager:
             strategy.update_graph_multiple(optimize_orbitals.split(" "), success=False)
         i = 1
 
+        last_successful_run = None
         while not strategy.converged():
             optimize_orbitals = " ".join(strategy.next_set())
+            # fix for additional unoccupied labelling space orbitals present in mr calculations with graspg
+            if self.type == "mr":
+                orbitals_spectroscopic = optimize_orbitals
+            else:
+                orbitals_spectroscopic = self.orbitals_spectroscopic
             print(f"Trying set {optimize_orbitals}.")
             run_name = (
                 self.id + str(i) if optimize_orbitals != "*" else self.id + "_all"
             )
+            # dont keep bad orbitals !?
+            init_run = None
+            if successful_run_exists and self.type == "as":
+                init_run = self.id + str(i - 1)
+            elif successful_run_exists and self.type == "mr":
+                init_run = (
+                    self.id + str(i - 1)
+                    if last_successful_run is None
+                    else last_successful_run
+                )
             scf = SelfConsistentField(
                 execs=self.execs,
                 exitcode_log=self.exitcode_log,
                 orbitals_optimise=optimize_orbitals,
-                orbitals_spectroscopic=self.orbitals_spectroscopic,
+                orbitals_spectroscopic=orbitals_spectroscopic,
                 run_name=run_name,
                 levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
-                init_run=self.id + str(i - 1) if successful_run_exists else None,
+                init_run=init_run,
                 n_iterations=self.maxit,
                 graspg=self.graspg,
                 second_try_on_limit_reached=self.restart_on_maxit_reached,
@@ -181,6 +202,7 @@ class SCFManager:
             if retcode == 0:
                 successful_run_exists = True
                 strategy.update_graph_multiple(optimize_orbitals.split(" "))
+                last_successful_run = self.id + str(i - 1)
             else:
                 strategy.update_graph_multiple(
                     optimize_orbitals.split(" "), success=False
