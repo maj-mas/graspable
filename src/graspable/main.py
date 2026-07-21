@@ -59,9 +59,37 @@ class GraspableMain:
         # merge the two s.t. defaults are inserted where the base has no entries
         merged_conf = OmegaConf.merge(default_config, config)
 
+        # perform some logic on the config
+        self._preproc_cfg(merged_conf)
+
         # proceed to calculation
         calc = Calculation(merged_conf)
         calc.run()
+
+    def _preproc_cfg(self, cfg: dict):
+        # non parity specific option can be used if parity spefici one is not given
+        # mr
+        if (
+            cfg["mr_csf"]["levels_per_j"] is not None
+            and cfg["mr_csf"]["levels_per_j_even"] is None
+        ):
+            cfg["mr_csf"]["levels_per_j_even"] = cfg["mr_csf"]["levels_per_j"]
+        if (
+            cfg["mr_csf"]["levels_per_j"] is not None
+            and cfg["mr_csf"]["levels_per_j_odd"] is None
+        ):
+            cfg["mr_csf"]["levels_per_j_odd"] = cfg["mr_csf"]["levels_per_j"]
+        # as
+        if (
+            cfg["as_csf"]["levels_per_j"] is not None
+            and cfg["as_csf"]["levels_per_j_even"] is None
+        ):
+            cfg["as_csf"]["levels_per_j_even"] = cfg["as_csf"]["levels_per_j"]
+        if (
+            cfg["as_csf"]["levels_per_j"] is not None
+            and cfg["as_csf"]["levels_per_j_odd"] is None
+        ):
+            cfg["as_csf"]["levels_per_j_odd"] = cfg["as_csf"]["levels_per_j"]
 
 
 def main():

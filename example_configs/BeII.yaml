@@ -1,16 +1,16 @@
 # information about the computing environment
 env:
-  grasp_bin_path: /home/majam/code/grasp/bin # path to grasp binaries
+  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
   working_dir: /home/majam/code/graspable_data/BeII/work # path for intermediate but not temporary files
   output_dir: /home/majam/code/graspable_data/BeII # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
   result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
   mpi:
-    use: false # whether to use mpi
-    n_p: 1 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
-    invoke_cmd: "mpirun -np 1" # mpi invocation, e.g. mpirun -np 12 or srun
+    use: true # whether to use mpi
+    n_p: 12 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/BeII/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
-    mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
-    graspg: false # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
+    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    graspg: true # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
   clean: false
   improve: false
   keep_log: true
@@ -29,8 +29,8 @@ nuclear:
   m: 9.0121831 # NEUTRAL atomic mass in amu
   static: false # whether the nucleus is to be taken as static. same effect achieved by m = 0
   I: 1.5 # nuclear spin in hbar
-  dipole: 0 # nuclear dipole moment in nuclear magnetons
-  quadrupole: 0 # nuclear quadrupole moment in barn
+  dipole: -1.398 # nuclear dipole moment in nuclear magnetons
+  quadrupole: 0.0529 # nuclear quadrupole moment in barn
 
 # data for csf expansion generation
 states:
@@ -49,7 +49,7 @@ states:
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
   reduce: 0 # whether to attempt to reduce the active space using rcsfinteract
   2j_min_even: 1 # minimum value of 2J for generated CSFs
-  2j_max_even: 1 # maximum value of 2J for generated CSFs
+  2j_max_even: 5 # maximum value of 2J for generated CSFs
   labelling_space: "2s,2p" # must be set appropriately for use with graspg
 
 # parameters for the determination of initial wavefunctions in the multireference
@@ -68,7 +68,7 @@ mr_csf:
 # TODO debug options, level weigths
 as_csf:
   optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
-  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j: 2 # if int, applies to all J in range, otherwise list of number of states
 
 # parameters for the ci calculation
 # TODO debug options

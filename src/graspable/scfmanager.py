@@ -22,6 +22,7 @@ class SCFManager:
         state: str,
         orbitals: list[str],
         type: str,
+        parity: str,
         id: str,
         mpi: bool = True,
         init_run: str | None = None,
@@ -38,6 +39,7 @@ class SCFManager:
             state (str): name of state on disk
             orbitals (list[str]): Orbitals to include in optimisation
             type (str): "mr" or "as" depending on whether the calculation is performed for the only multireference or for the active space.
+            parity (str): "odd" or "even"
             id (str): TODO same as state, rm
             mpi (bool, optional): Whether mpi is used (note: if graspg is enabled, mpi must always be on). Defaults to True.
             init_run (str | None, optional): Unsued? TODO rm. Defaults to None.
@@ -71,6 +73,7 @@ class SCFManager:
                 "restart_on_maxit_reached"
             ]
             self.dampen_factor = self.cfg["as_csf"]["dampen_factor"]
+        self.parity = parity
 
         self.id = id
         self.mpi = mpi
@@ -144,7 +147,7 @@ class SCFManager:
             orbitals_optimise=optimize_orbitals,
             orbitals_spectroscopic=orbitals_spectroscopic,
             run_name=self.id + str(i),
-            levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
+            levels_per_j=self.cfg[f"{self.type}_csf"][f"levels_per_j_{self.parity}"],
             mpi=self.mpi,
             init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
             init_run=self.init_run,
@@ -189,7 +192,9 @@ class SCFManager:
                 orbitals_optimise=optimize_orbitals,
                 orbitals_spectroscopic=orbitals_spectroscopic,
                 run_name=run_name,
-                levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
+                levels_per_j=self.cfg[f"{self.type}_csf"][
+                    f"levels_per_j_{self.parity}"
+                ],
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=init_run,
@@ -223,7 +228,9 @@ class SCFManager:
                 orbitals_optimise=optimize_orbitals,
                 orbitals_spectroscopic=self.orbitals_spectroscopic,
                 run_name=self.id + "_all",
-                levels_per_j=self.cfg[f"{self.type}_csf"]["levels_per_j"],
+                levels_per_j=self.cfg[f"{self.type}_csf"][
+                    f"levels_per_j_{self.parity}"
+                ],
                 mpi=self.mpi,
                 init_type=self.init_type_map[self.cfg["orbital_init"]["type"]],
                 init_run=self.id + str(i - 1) if successful_run_exists else None,

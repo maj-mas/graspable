@@ -75,6 +75,7 @@ class Calculation:
                 state=state,
                 orbitals=orbitals,
                 type="mr",
+                parity=parity,
                 id=state,
                 mpi=True
                 if self.cfg["env"]["mpi"]["graspg"]
@@ -121,6 +122,7 @@ class Calculation:
                     state=state,
                     orbitals=orbitals,
                     type="as",
+                    parity=parity,
                     id=state,
                     mpi=True,
                     init_run=prev_state,
@@ -159,7 +161,7 @@ class Calculation:
                     self.cfg,
                     self.execs,
                     self.exitcode_log,
-                    self.cfg["as_csf"]["levels_per_j"],
+                    self.cfg["as_csf"][f"levels_per_j_{parity}"],
                     id=state,
                 )
                 self.ci.run()

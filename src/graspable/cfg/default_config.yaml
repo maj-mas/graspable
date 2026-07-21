@@ -71,6 +71,8 @@ orbital_init:
 mr_csf:
   optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
   levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j_even: null
+  levels_per_j_odd: null
   max_orbital_combos: 100
   maxit: 100
   dampen_factor: null
@@ -80,6 +82,8 @@ mr_csf:
 as_csf:
   optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
   levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
+  levels_per_j_even: null
+  levels_per_j_odd: null
   maxit: 100
   restart_on_maxit_reached: false
   dampen_factor: null
