@@ -76,6 +76,7 @@ class Environment:
         if self.cfg["mpi"]["use"]:
             tmp_dir = Path(self.cfg["mpi"]["tmp_dir"])
             tmp_dir.mkdir(exist_ok=True, parents=True)
+            os.environ["TMPDIR"] = self.cfg["mpi"]["tmp_dir"]  # used by gfortran builds
 
             # make tmp dirs for mpi
             for i in range(self.cfg["mpi"]["n_p"]):
