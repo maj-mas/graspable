@@ -41,7 +41,9 @@ class SelfConsistentField:
         self.execs = execs
         self.exitcode_log = exitcode_log
         self.orbitals_optimise = self._expand_orbitals_relativistic(orbitals_optimise)
-        self.orbitals_spectroscopic = orbitals_spectroscopic
+        self.orbitals_spectroscopic = self._expand_orbitals_relativistic(
+            orbitals_spectroscopic
+        )
         self.run_name = run_name
         self.levels_per_j = levels_per_j
         self.mpi = mpi
