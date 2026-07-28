@@ -68,6 +68,8 @@ class SelfConsistentField:
         Returns:
             _type_: Space delimited string of orbitals with wild card appended.
         """
+        if len(orbitals) == 1 and orbitals[0] == "":
+            return orbitals
         if "*" in orbitals:
             return orbitals
         relativistic_orbitals = ""
