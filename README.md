@@ -3,13 +3,20 @@
 
 
 # Installation
-TODO
+In the future, `graspable` will be available on the Python package index. For now, `graspable` can be installed by cloning the repo, ensuring all dependencies are installed and invoking
 ```
-$ pip install graspable
+$ pip install .
+```
+from the project's root.
+
+# Examples
+Multiple example configuration files are included under `example_configs`. To start a calculation, invoke
+```
+$ graspable -c=path/to/config.yaml
 ```
 
-# Example
-TODO
+# Documentation
+The documentation for `graspable` is unfinished. In the future, it will be included with the source and also available on the web.
 
 # Development tools
 Colleagues who wish to contribute by submitting pull requests to `graspable` require the following tools:
