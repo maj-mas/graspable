@@ -19,7 +19,7 @@ env:
 
 # metadata, no impact on calculations
 meta:
-  name: "calculation" # name of calculation, only used for output
+  name: "Carbon 4+" # name of calculation, only used for output
 
 # nuclear data
 nuclear:
