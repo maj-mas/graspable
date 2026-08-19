@@ -10,7 +10,7 @@ env:
     invoke_cmd: "mpirun -np 12" # mpi invocation, e.g. mpirun -np 12 or srun
     tmp_dir: /home/majam/code/graspable_data/He/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
     mem: true # whether to use rmcdhf_mem_mpi, I think yes is a good default
-  clean: true
+  clean: false
 
 # metadata, no impact on calculations
 meta:

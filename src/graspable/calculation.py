@@ -194,6 +194,7 @@ class Calculation:
         else:
             n_min_ci = self.csfman.n_max
             n_max_ci = n_min + 1
+        l_max = self.csfman.l_max
 
         # if self.csfman.has_even: TODO
         #     orbitals = self.csfman.active_orbitals_given_n(n)
@@ -210,6 +211,7 @@ class Calculation:
             n_max,
             n_min_ci,
             n_max_ci,
+            l_max,
             self.csfman.has_even,
             self.csfman.has_odd,
         )

@@ -68,7 +68,7 @@ orbital_init:
 
 # parameters for the initial scf procedure on the states in the multireference
 # TODO debug options, level weigths
-mr_csf:
+mr_csf: # TODO fix typo
   optimization_order: null # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
   levels_per_j: null # if int, applies to all J in range, otherwise list of number of states
   levels_per_j_even: null

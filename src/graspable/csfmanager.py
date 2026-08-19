@@ -472,7 +472,9 @@ class CSFManager:
         )  # TODO assumes s orbital always has the highest n in basis set
         if highest_n_basis <= highest_n_state:
             raise RuntimeError("Active space too small to create sensible split.")
-        return highest_n_state, highest_n_basis
+        max_l_basis_set = self.cfg["basis_set"].split(",")[-1]
+        n, highest_l = self._decompose_orbital(max_l_basis_set)
+        return highest_n_state, highest_n_basis, highest_l
 
     def _create_rcsfsplit_input(self, fname: str, state_name: str):
         """Creates an input file for the CSF list splitting programs of grasp.
@@ -481,7 +483,7 @@ class CSFManager:
             fname (str): File name.
             state_name (str): Name of state on disk.
         """
-        self.n_min, self.n_max = self._select_split()
+        self.n_min, self.n_max, self.l_max = self._select_split()
         self.n_sets = self.n_max - self.n_min + 1
         with open(f"input/{fname}", "w") as file:
             file.write(state_name + "\n")
@@ -952,7 +954,7 @@ class CSFManager:
         print(
             "Performing AS split manually since graspg is enabled, this step might take a little longer."
         )
-        self.n_min, self.n_max = self._select_split()
+        self.n_min, self.n_max, self.l_max = self._select_split()
         self.n_sets = self.n_max - self.n_min + 1
 
         for n in range(self.n_min, self.n_max + 1):

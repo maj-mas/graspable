@@ -59,15 +59,15 @@ states:
     even: ["4s2 4p6 4d10 4f12 5s2"] # list of even reference states
     odd: ["4s2 4p6 4d10 4f13 5s1"] # list of odd reference states
   core: "1s 2s 2p 3s 3p 3d"
-  basis_set: "10s,10p,10d,10f,10g,10h" # string defining the basis expansion in the form "5s,4p,3d"
+  basis_set: "6s,6p,6d,6f,6g,6h" # string defining the basis expansion in the form "5s,4p,3d"
   active: "4s 4p 4d 4f 5s" # space delimited list of active shells (wildcards allowed) or object specifying minimum occupation for every shell
   advanced:
     4s 4p 4d 4f 5s:
-      basis_set: "7s,7p,7d,7f,7g"
+      basis_set: "6s,6p,6d,6f,6g"
       excitations: 2
       min_occ: null
     4f 5s:
-      basis_set: "10s,10p,10d,10f,10g,10h"
+      basis_set: "6s,6p,6d,6f,6g,6h"
       excitations: 2
       min_occ: null
   excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values

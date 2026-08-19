@@ -11,6 +11,7 @@ class Summary:
         n_max_mcdf: int,
         n_min_ci: int,
         n_max_ci: int,
+        l_max: int,
         has_even: bool,
         has_odd: bool,
     ) -> None:
@@ -21,6 +22,7 @@ class Summary:
         self.n_max_mcdf = n_max_mcdf
         self.n_min_ci = n_min_ci
         self.n_max_ci = n_max_ci
+        self.l_max = l_max
         self.has_even = has_even
         self.has_odd = has_odd
 
@@ -56,10 +58,49 @@ class Summary:
     def _gen_E_table_best(self):
         cm_files = []
         if self.has_even:
-            cm_files.append()
+            cm_files.append(f"as_even{self.n_max_ci}{self.l_max + 1}CI.cm")
+        if self.has_odd:
+            cm_files.append(f"as_odd{self.n_max_ci}{self.l_max + 1}CI.cm")
 
-    def _gen_report(self):
-        pass
+        print(cm_files)
+
+        self._call_rlevels(cm_files, "E_table_best")
+
+    def _print_and_write(self, text: str, file):
+        print(text)
+        file.write(text)
+
+    def _print_report(self):
+
+        zero_exitcode_count = 0
+        for call_dict in self.exitcode_log:
+            key, code = list(call_dict.items())[0]
+            zero_exitcode_count += 1 if code == 0 else 0
+        num_calls = len(self.exitcode_log)
+
+        with open("report", "w") as file:
+            self._print_and_write(
+                f"\n----- Summary for calculation: {self.cfg['meta']['name']} -----",
+                file,
+            )
+            self._print_and_write(
+                f"Out of {num_calls} program calls, {zero_exitcode_count} returned no errors.",
+                file,
+            )
+            if zero_exitcode_count != num_calls:
+                self._print_and_write("The following programs reported errors:\n", file)
+                for call_dict in self.exitcode_log:
+                    key, code = list(call_dict.items())[0]
+                    if code != 0:
+                        self._print_and_write(key, file)
+                self._print_and_write("\n", file)
+            self._print_and_write(
+                "Printing the energy table of the largest calculation:", file
+            )
+
+            with open("E_table_best", "r") as E_file:
+                table = E_file.read()
+            self._print_and_write(table, file)
 
     def _gen_table_convergence(self):
         pass
@@ -68,4 +109,6 @@ class Summary:
         pass
 
     def create(self):
-        pass
+        self._gen_E_table_best()
+
+        self._print_report()
