@@ -1,0 +1,93 @@
+# information about the computing environment
+env:
+  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
+  working_dir: /home/majam/code/graspable_data/Ni12/work # path for intermediate but not temporary files
+  output_dir: /home/majam/code/graspable_data/Ni12 # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
+  mpi:
+    use: true # whether to use mpi
+    n_p: 8 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: "mpirun -np 8" # mpi invocation, e.g. mpirun -np 12 or srun
+    tmp_dir: /home/majam/code/graspable_data/Ni12/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
+    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    graspg: false # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
+  clean: false
+  improve: false
+  keep_log: true
+  keep_input: true
+  keep_intermediate: true
+
+# metadata, no impact on calculations
+meta:
+  name: "calculation" # name of calculation, only used for output
+
+# nuclear data
+nuclear:
+  Z: 28 # atomic number
+  A: 58 # mass number,
+  point-like: false # whether to use point-like nuclear potential. same effect achieved by A = 0
+  m: 57.93534165 # NEUTRAL atomic mass in amu
+  static: false # whether the nucleus is to be taken as static. same effect achieved by m = 0
+  I: 0 # nuclear spin in hbar
+  dipole: 0 # nuclear dipole moment in nuclear magnetons
+  quadrupole: 0 # nuclear quadrupole moment in barn
+
+# data for csf expansion generation
+states:
+  multireference:
+    even: ["3s2 3p4"] # list of even reference states
+    odd: null # list of odd reference states
+  core: "1s 2s 2p"
+  basis_set: "7s,7p,7d,7f,7g" # string defining the basis expansion in the form "5s,4p,3d". if advanced is used, must be equal to the largest basis specified there!
+  active: "3s 3p" # space delimited list of active shells (wildcards allowed). if advanced is used, no wildcards and all shells that appear in advanced must be here.
+  # advanced: # does not work if MR only contains a single orbital
+  #   4f 5s:
+  #     basis_set: "6s,6p,6d,6f,6g"
+  #     excitations: 2
+  #     min_occ:
+  #       4f: 10
+  excitations: 2 # integer value specifiyng the maximum number of excitations to generate csfs from the multireference with. GRASP's semantics apply wrt. to negative values
+  reduce: 1 # whether to attempt to reduce the active space using rcsfinteract, 0: no reduction, 1: reduce based on dirac-coulomn (more aggressive), 2: reduce based on dirac-coulomb-breit (keeps  a few more)
+  2j_min_even: 0 # minimum value of 2J for generated CSFs
+  2j_max_even: 4 # maximum value of 2J for generated CSFs
+  labelling_space: "3s,3p,3d" # must be set appropriately for use with graspg
+
+# parameters for the determination of initial wavefunctions in the multireference
+# TODO debug options
+orbital_init:
+  type: "screened_h" # "tf", "screened_h", "screened_h_z"
+
+
+# parameters for the initial scf procedure on the states in the multireference
+# TODO debug options, level weigths
+mr_csf:
+  optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
+  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
+
+# parameters for the scf procedure for the active space
+# TODO debug options, level weigths
+as_csf:
+  optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
+  levels_per_j: 1 # if int, applies to all J in range, otherwise list of number of states
+
+# parameters for the ci calculation
+# TODO debug options
+ci:
+  as_expansion: true # whether to perform CI at every step as the active space is expanded by +1 in the principal quantum number. useful to estimate convergence of levels
+  qed:
+    with_and_without: true # useful to explicitly state the contribution of qed. if true, rci is run once with and once without QED
+    transverse: true
+    transverse_all_freqs: true
+    scale: "1.d-6"
+    vacpol: true
+    normal_ms: false # normal mass shift
+    specific_ms: false # specific mass shift
+    se: true # self-energy
+    n_se: 3 # maximum n quantum number for self-energy estimation
+
+# parameters for transition matrix element calculation
+trans:
+  multipoles: ["E2"] # list of multipole types, e.g. ["E1", "M2"]
+  eveneven: true # perform calculation for transitions among the even multireference
+  oddodd: false # perform calculation for transitions among the odd multireference
+  evenodd: false # perform calculation for transitions between odd and even states in the respective multireference

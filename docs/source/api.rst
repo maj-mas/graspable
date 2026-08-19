@@ -1,0 +1,2 @@
+.. automodule:: graspable.main
+    :members:

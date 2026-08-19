@@ -1,0 +1,92 @@
+# information about the computing environment
+env:
+  grasp_bin_path: /home/majam/code/grasp-2018-12-03/bin # path to grasp binaries
+  working_dir: /home/majam/code/graspable_data/C4_2015/work # path for intermediate but not temporary files
+  output_dir: /home/majam/code/graspable_data/C4_2015 # path to save important result files to, e.g. a path in the home directory. if null, no action is taken.
+  result_filetypes: [".cm", ".m", "lsj", "ct", ".w", ".cbm"] # types of result files that should be moved to output_dir for savekeeping
+  mpi:
+    use: true # whether to use mpi
+    n_p: 8 # number of mpi tasks. must be specified so the folders in tmp_dir and the disks file can be set up
+    invoke_cmd: "mpirun -np 8" # mpi invocation, e.g. mpirun -np 12 or srun
+    tmp_dir: /home/majam/code/graspable_data/C4_2015/tmp_mpi # path for mpi tmp files, creates 1 dir per task there
+    mem: false # whether to use rmcdhf_mem_mpi, I think yes is a good default
+    graspg: false # TODO, incompatible with split it seems like, might have to do split myself, also mpi use must be true
+  clean: false
+  improve: false
+  keep_log: true
+  keep_input: true
+  keep_intermediate: true
+
+# metadata, no impact on calculations
+meta:
+  name: "calculation" # name of calculation, only used for output
+
+# nuclear data
+nuclear:
+  Z: 6 # atomic number
+  A: 13 # mass number,
+  point-like: false # whether to use point-like nuclear potential. same effect achieved by A = 0
+  m: 13.003354835336 # NEUTRAL atomic mass in amu
+  static: false # whether the nucleus is to be taken as static. same effect achieved by m = 0
+  I: 0 # nuclear spin in hbar
+  dipole: 0 # nuclear dipole moment in nuclear magnetons
+  quadrupole: 0 # nuclear quadrupole moment in barn
+  non_default_fermi:
+    r_rms : 2.480 # nuclear root mean squared radius (fm)
+    skin : 2.3 # skin thickness (fm)
+
+# data for csf expansion generation
+states:
+  multireference:
+    even: ["1s2", "1s1 2s1", "1s1 2p1"]
+    odd: null
+  core: null
+  basis_set: "7s,7p,7d,7f,7g,7h"
+  active: "1s 2s 2p"
+  excitations: 2
+  reduce: 0
+  2j_min_even: 0
+  2j_max_even: 4
+  #labelling_space: "2s,2p" # must be set appropriately for use with graspg
+
+# parameters for the determination of initial wavefunctions in the multireference
+# TODO debug options
+orbital_init:
+  type: "screened_h" # "tf", "screened_h", "screened_h_z"
+
+
+# parameters for the initial scf procedure on the states in the multireference
+# TODO debug options, level weigths
+mr_csf:
+  optimization_order: "default" # comma delimited string of relativistic subshells, wildcards allowed, or one of the following: "default", "adaptive" (see docs)
+  levels_per_j_even: [3, 2, 1] # if int, applies to all J in range, otherwise list of number of states
+  maxit: 10000
+  dampen_factor: 0.5
+
+# parameters for the scf procedure for the active space
+# TODO debug options, level weigths
+as_scf:
+  optimization_order: "default"
+  levels_per_j_even: [3, 2, 1]
+
+# parameters for the ci calculation
+# TODO debug options
+ci:
+  as_expansion: true
+  qed:
+    with_and_without: true
+    transverse: true
+    transverse_all_freqs: true
+    scale: "1.d-6"
+    vacpol: true
+    normal_ms: false
+    specific_ms: false
+    se: true
+    n_se: 2
+
+# parameters for transition matrix element calculation
+trans:
+  multipoles: ["E2"] # list of multipole types, e.g. ["E1", "M2"]
+  eveneven: false # perform calculation for transitions among the even multireference
+  oddodd: false # perform calculation for transitions among the odd multireference
+  evenodd: false # perform calculation for transitions between odd and even states in the respective multireference

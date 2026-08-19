@@ -3,17 +3,29 @@ name = "graspable"
 version = "0.1.0"
 description = "graspable aims to provide users with a YAML-based set of tools to set up and run atomic structure calculations using the GRASP package."
 authors = [
-    {name = "Maja Maschke"}
+    {name = "Maja Maschke", email="m.maschke@tu-bs.de"}
 ]
 license = "MIT"
+license-files = ["LICEN[CS]E*"]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "omegaconf (>=2.3.0,<3.0.0)",
     "numpy (>=2.4.6,<3.0.0)",
-    "scipy (>=1.17.1,<2.0.0)"
+    "ruff (>=0.15.16,<0.16.0)",
 ]
 
+[project.scripts]
+graspable = "graspable.main:main"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.setuptools.package-data]
+cfg = ["*.yaml"]
+
+[tool.ruff.lint]
+extend-select = ["B"]
+ignore = ["E741"] # ambiguious names: n, l can be semantic in physics codes
