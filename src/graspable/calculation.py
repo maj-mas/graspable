@@ -81,7 +81,7 @@ class Calculation:
                 if self.cfg["env"]["mpi"]["graspg"]
                 else False,  # g only has mpi
                 final_star_run=True,
-                run_limit=self.cfg["mr_csf"]["max_orbital_combos"],
+                run_limit=self.cfg["mr_scf"]["max_orbital_combos"],
             )
             self.csfmr.run()
             print(f"... done. {(datetime.now() - self.time).total_seconds()} s\n")
@@ -161,7 +161,7 @@ class Calculation:
                     self.cfg,
                     self.execs,
                     self.exitcode_log,
-                    self.cfg["as_csf"][f"levels_per_j_{parity}"],
+                    self.cfg["as_scf"][f"levels_per_j_{parity}"],
                     id=state,
                 )
                 self.ci.run()

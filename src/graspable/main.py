@@ -70,26 +70,26 @@ class GraspableMain:
         # non parity specific option can be used if parity spefici one is not given
         # mr
         if (
-            cfg["mr_csf"]["levels_per_j"] is not None
-            and cfg["mr_csf"]["levels_per_j_even"] is None
+            cfg["mr_scf"]["levels_per_j"] is not None
+            and cfg["mr_scf"]["levels_per_j_even"] is None
         ):
-            cfg["mr_csf"]["levels_per_j_even"] = cfg["mr_csf"]["levels_per_j"]
+            cfg["mr_scf"]["levels_per_j_even"] = cfg["mr_scf"]["levels_per_j"]
         if (
-            cfg["mr_csf"]["levels_per_j"] is not None
-            and cfg["mr_csf"]["levels_per_j_odd"] is None
+            cfg["mr_scf"]["levels_per_j"] is not None
+            and cfg["mr_scf"]["levels_per_j_odd"] is None
         ):
-            cfg["mr_csf"]["levels_per_j_odd"] = cfg["mr_csf"]["levels_per_j"]
+            cfg["mr_scf"]["levels_per_j_odd"] = cfg["mr_scf"]["levels_per_j"]
         # as
         if (
-            cfg["as_csf"]["levels_per_j"] is not None
-            and cfg["as_csf"]["levels_per_j_even"] is None
+            cfg["as_scf"]["levels_per_j"] is not None
+            and cfg["as_scf"]["levels_per_j_even"] is None
         ):
-            cfg["as_csf"]["levels_per_j_even"] = cfg["as_csf"]["levels_per_j"]
+            cfg["as_scf"]["levels_per_j_even"] = cfg["as_scf"]["levels_per_j"]
         if (
-            cfg["as_csf"]["levels_per_j"] is not None
-            and cfg["as_csf"]["levels_per_j_odd"] is None
+            cfg["as_scf"]["levels_per_j"] is not None
+            and cfg["as_scf"]["levels_per_j_odd"] is None
         ):
-            cfg["as_csf"]["levels_per_j_odd"] = cfg["as_csf"]["levels_per_j"]
+            cfg["as_scf"]["levels_per_j_odd"] = cfg["as_scf"]["levels_per_j"]
 
 
 def main():
