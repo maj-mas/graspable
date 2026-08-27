@@ -47,13 +47,13 @@ class Summary:
     def _call_rlevels(self, files: list[str], fname_out: str):
         if len(files) == 0:
             raise RuntimeError("_call_rlevels() needs at least one file as input.")
-        cmd = self.execs["rlevels"] + " "
+        cmd = self.execs["rlevelseV"] + " "
         for file in files:
             cmd += file + " "
         cmd += f"> {fname_out}"
 
         rlevels_proc = subprocess.run([cmd], shell=True)
-        self.exitcode_log.append({"rlevels": rlevels_proc.returncode})
+        self.exitcode_log.append({"rlevelseV": rlevels_proc.returncode})
 
     def _gen_E_table_best(self):
         cm_files = []
@@ -61,8 +61,6 @@ class Summary:
             cm_files.append(f"as_even{self.n_max_ci}{self.l_max + 1}CI.cm")
         if self.has_odd:
             cm_files.append(f"as_odd{self.n_max_ci}{self.l_max + 1}CI.cm")
-
-        print(cm_files)
 
         self._call_rlevels(cm_files, "E_table_best")
 

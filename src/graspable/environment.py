@@ -19,6 +19,7 @@ class Environment:
         "rtransition": "rtransition",
         "rcsfinteract": "rcsfinteract",
         "rlevels": "rlevels",
+        "rlevelseV": "rlevelseV",
         "rtablevels": "rtablevels",
     }  # TODO add missing ones
     mpi_prgs = [
@@ -155,7 +156,7 @@ class Environment:
                 self.execs[identifier] = exec
             # prepend path and invoker
             self.execs[identifier] = str(grasp_bin_path / exec)
-            if identifier in self.mpi_prgs and self.cfg["mpi"]:
+            if identifier in self.mpi_prgs and self.cfg["mpi"]["use"]:
                 self.execs[identifier] = (
                     self.cfg["mpi"]["invoke_cmd"] + " " + self.execs[identifier]
                 )

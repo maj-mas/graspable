@@ -17,6 +17,7 @@ class Clean:
                 capture_output=True,
             )
 
+        # TODO do this only if no errors occured!
         if not self.cfg["env"]["keep_log"]:
             subprocess.run(
                 ["rm log/*"], shell=True, executable="/bin/bash", capture_output=True
